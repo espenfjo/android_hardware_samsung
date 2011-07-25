@@ -110,5 +110,15 @@ int akm_disable_sensor(uint32_t sensor_type)
 
 int akm_set_delay(uint32_t sensor_type, uint64_t delay)
 {
-	return 0;
+	int rc;
+	struct akm_sensor_info *sensor=NULL;
+
+	sensor=akm_get_sensor(akm_device_chips, sizeof(akm_device_chips) / sizeof(void *), sensor_type);
+
+	if(sensor == NULL)
+		return 1;
+
+	rc=sensor->set_delay(sensor, delay);
+
+	return rc;
 }

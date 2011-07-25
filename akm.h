@@ -38,6 +38,7 @@ struct akm_sensor_info
 
 	int (*enable)(struct akm_sensor_info *sensor_info);
 	int (*disable)(struct akm_sensor_info *sensor_info);
+	int (*set_delay)(struct akm_sensor_info *sensor_info, uint64_t delay);
 
 	struct akm_chip_sensors *chip;
 };

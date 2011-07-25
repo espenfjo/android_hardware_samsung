@@ -82,6 +82,8 @@ void kr3d_data_get_thread(void *chip_p)
 
 	int get_data=0;
 
+//	pthread_mutex_lock(&chip->mutex);
+
 	chip=(struct akm_chip_sensors *) chip_p;
 
 	if(!chip->publisher->inited)
@@ -90,7 +92,7 @@ void kr3d_data_get_thread(void *chip_p)
 		if(rc)
 		{
 			LOGE("publisher init failed, aborting\n");
-			return;
+			goto exit;
 		}
 	}
 
@@ -107,13 +109,13 @@ void kr3d_data_get_thread(void *chip_p)
 		}
 
 		if(!get_data)
-			return;
+			goto exit;
 
 		rc=ioctl(chip->fd, KR3DM_IOCTL_READ_ACCEL_XYZ, &data);
 		if(rc < 0)
 		{
 			LOGE("ioctl failed, aborting: %s\n", strerror(errno));
-			return;
+			goto exit;
 		}
 
 		for(i=0 ; chip->sensors[i]->registered == AKM_REGISTERED ; i++)
@@ -134,9 +136,8 @@ void kr3d_data_get_thread(void *chip_p)
 		}
 	} while(get_data);
 
-	/* thsi should be in deinit */
-	pthread_mutex_unlock(&chip->mutex);
 
+exit:
 	chip->publisher->deinit(chip);	
 }
 
@@ -146,6 +147,21 @@ void kr3d_data_get(struct akm_chip_sensors *chip)
 
 	pthread_mutex_lock(&chip->mutex);
 	pthread_create(&thread, NULL, kr3d_data_get_thread, chip);
+}
+
+int kr3d_set_delay(struct akm_sensor_info *sensor_info, uint64_t delay)
+{
+	int rc;
+
+	rc=ioctl(sensor_info->chip->fd, KR3DM_IOCTL_SET_DELAY, &delay);
+
+	if(rc < 0)
+	{
+		LOGE("ioctl failed, aborting: %s\n", strerror(errno));
+		return 1;
+	}
+
+	return 0;
 }
 
 struct akm_chip_sensors kr3dm = {
@@ -169,5 +185,6 @@ struct akm_sensor_info kr3dm_accelerometer = {
 	.enabled=0,
 	.enable=default_enable,
 	.disable=default_disable,
+	.set_delay=kr3d_set_delay,
 	.chip=&kr3dm,
 };

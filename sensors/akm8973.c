@@ -200,9 +200,17 @@ int akm8973_publisher_deinit(struct akm_chip_sensors *chip)
 		return 1;
 	}
 
+	pthread_mutex_unlock(&(chip->mutex));
 	chip->publisher->control_fd=-1;
 	chip->publisher->publish_fd=-1;
 	chip->publisher->inited=0;
+	return 0;
+}
+
+int akm8973_set_delay(struct akm_sensor_info *sensor_info, uint64_t delay)
+{
+	int rc;
+
 	return 0;
 }
 
@@ -238,6 +246,7 @@ struct akm_sensor_info akm8973_magnetic_field = {
 	.enabled=0,
 	.enable=default_enable,
 	.disable=default_disable,
+	.set_delay=akm8973_set_delay,
 	.chip=&akm8973,
 };
 
@@ -247,5 +256,6 @@ struct akm_sensor_info akm8973_orientation = {
 	.enabled=0,
 	.enable=default_enable,
 	.disable=default_disable,
+	.set_delay=akm8973_set_delay,
 	.chip=&akm8973,
 };
