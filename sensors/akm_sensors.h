@@ -22,17 +22,24 @@
 
 #include "akm.h"
 
-int default_enable(struct akm_sensor_info *sensor_info);
-int default_disable(struct akm_sensor_info *sensor_info);
+/*
+ * The purpose of this file is to contain a mention to all the defined
+ * chips, sensors and publishers. If you add support for a chip, you must add
+ * these structures here (as external).
+ */
+
+/* Functions definitions, as defined in default.c. */
+int default_enable(struct akm_sensor *sensor);
+int default_disable(struct akm_sensor *sensor);
 
 /* kr3dm */
 extern struct akm_chip_sensors kr3dm;
-extern struct akm_sensor_info kr3dm_accelerometer;
+extern struct akm_sensor kr3dm_accelerometer;
 
 /* akm8973 */
 extern struct akm_chip_sensors akm8973;
 extern struct akm_publisher akm8973_publisher;
-extern struct akm_sensor_info akm8973_magnetic_field;
-extern struct akm_sensor_info akm8973_orientation;
+extern struct akm_sensor akm8973_magnetic_field;
+extern struct akm_sensor akm8973_orientation;
 
 #endif

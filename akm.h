@@ -28,35 +28,37 @@
 
 #include "hardware/sensors.h"
 
-#define AKM_REGISTERED 42
-
-struct akm_sensor_info
+/* This structure contains the sensor-related infos. */
+struct akm_sensor
 {
-	uint8_t registered;
 	uint8_t type;
 	uint8_t enabled;
 
-	int (*enable)(struct akm_sensor_info *sensor_info);
-	int (*disable)(struct akm_sensor_info *sensor_info);
-	int (*set_delay)(struct akm_sensor_info *sensor_info, uint64_t delay);
+	int (*enable)(struct akm_sensor *sensor_info);
+	int (*disable)(struct akm_sensor *sensor_info);
+	int (*set_delay)(struct akm_sensor *sensor_info, uint64_t delay);
 
 	struct akm_chip_sensors *chip;
 };
 
+/* This structure contains the publisher-realted infos. */
 struct akm_publisher
 {
-	int control_fd;
-	int publish_fd;
-	char *input_name;
+	int fd;
+	char *input_device_name;
+	char *input_node_name;
 	uint8_t inited;
 	int (*init)(struct akm_chip_sensors *chip);
 	int (*deinit)(struct akm_chip_sensors *chip);
 	void (*data_publish)(struct akm_chip_sensors *chip, uint8_t type, void *data);
 };
 
+/* 
+ * This structure contains the sensors for one chip. Since a chip can hold 
+ * various sensors types, it holds a list of the sensors attached to the chip.
+ */
 struct akm_chip_sensors
 {
-	uint8_t registered;
 	struct akm_publisher *publisher;
 	void (*data_get)(struct akm_chip_sensors *chip);
 	int (*init)(struct akm_chip_sensors *chip);
@@ -64,16 +66,28 @@ struct akm_chip_sensors
 	uint8_t inited;
 	char *device_name;
 	int fd;
-	pthread_mutex_t mutex;
+	int data_lock;
 	int sensors_count;
-	struct akm_sensor_info *sensors[];
+	struct akm_sensor *sensors[];
 };
 
+/* This structure holds basic 3-dimensional vector infos (x, y and z coords). */
 struct akm_publish_vector
 {
 	int x;
 	int y;
 	int z;
 };
+
+/* Functions definitions, as defined in akm.c. */
+
+void akm_init(void);
+void akm_deinit(void);
+int akm_sanity_check(struct akm_chip_sensors *device_chips[], int device_chips_count);
+struct akm_sensor *akm_get_sensor(struct akm_chip_sensors *device_chips[], int device_chips_count, uint32_t sensor_type);
+int akm_is_sensor_enabled(uint32_t sensor_type);
+int akm_enable_sensor(uint32_t sensor_type);
+int akm_disable_sensor(uint32_t sensor_type);
+int akm_set_delay(uint32_t sensor_type, uint64_t delay);
 
 #endif

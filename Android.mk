@@ -29,7 +29,7 @@ LOCAL_SRC_FILES := akm.c \
     sensors/kr3dm.c \
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
-LOCAL_CFLAGS := -DLOG_TAG=\"libakm_free\" --std=c99
+LOCAL_CFLAGS := -DLOG_TAG=\"libakm_free\"
 LOCAL_SHARED_LIBRARIES := liblog libcutils
 LOCAL_PRELINK_MODULE := false
 

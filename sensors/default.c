@@ -29,76 +29,38 @@
 
 #define SENSOR_NAME	"default"
 
-int default_enable(struct akm_sensor_info *sensor_info)
+/* These are the standard functions to enable and disable a sensor. */
+int default_enable(struct akm_sensor *sensor)
 {
 	int rc;
 
-	if(sensor_info->enabled)
+	/* Skip if the sensor is already enabled. */
+	if(sensor->enabled)
 	{
 		LOGV("%s already enabled.\n", SENSOR_NAME);
 		return 0;
 	}
 
-	rc=sensor_info->chip->init(sensor_info->chip);
+	/* Init the sensor chip. Will be skiped if already initialized. */
+	rc=sensor->chip->init(sensor->chip);
 
-	sensor_info->enabled=1;
+	/* Set the sensor as enabled. */
+	sensor->enabled=1;
 
 	return rc;
 }
 
-int default_disable(struct akm_sensor_info *sensor_info)
+int default_disable(struct akm_sensor *sensor)
 {
-	int rc;
-
-	if(!sensor_info->enabled)
+	/* Skip if the sensor is already disabled. */
+	if(!sensor->enabled)
 	{
 		LOGV("%s already disabled.\n", SENSOR_NAME);
 		return 0;
 	}
 
-	sensor_info->enabled=0;
+	/* Set the sensor as disabled. */
+	sensor->enabled=0;
 
-	return rc;
+	return 0;
 }
-
-/* to rewrite please */
-int default_open_input_by_name(const char *inputName)
-{
-    int fd = -1;
-    const char *dirname = "/dev/input";
-    char devname[PATH_MAX];
-    char *filename;
-    DIR *dir;
-    struct dirent *de;
-    dir = opendir(dirname);
-    if(dir == NULL)
-        return -1;
-    strcpy(devname, dirname);
-    filename = devname + strlen(devname);
-    *filename++ = '/';
-    while((de = readdir(dir))) {
-        if(de->d_name[0] == '.' &&
-                (de->d_name[1] == '\0' ||
-                        (de->d_name[1] == '.' && de->d_name[2] == '\0')))
-            continue;
-        strcpy(filename, de->d_name);
-        fd = open(devname, O_RDONLY);
-        if (fd>=0) {
-            char name[80];
-            if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), &name) < 1) {
-                name[0] = '\0';
-            }
-            if (!strcmp(name, inputName)) {
-                break;
-            } else {
-                close(fd);
-                fd = -1;
-            }
-        }
-    }
-    closedir(dir);
-
-    return fd;
-}
-
-

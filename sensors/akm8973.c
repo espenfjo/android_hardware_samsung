@@ -38,6 +38,7 @@ int akm8973_init(struct akm_chip_sensors *chip)
 	if(chip->inited)
 		return 0;
 
+	/* Add the file descriptor to the chip struct. */
 	fd=open(chip->device_name, O_RDWR);
 	if(fd < 0)
 	{
@@ -50,6 +51,10 @@ int akm8973_init(struct akm_chip_sensors *chip)
 	/* Do more if needed */
 
 	chip->inited=1;
+
+exit:
+	/* Finally, start to get data from the chip. */
+//	chip->data_get(chip);
 
 	return 0;
 }
@@ -65,6 +70,7 @@ int akm8973_deinit(struct akm_chip_sensors *chip)
 		return 1;
 	}
 
+	/* Close the descriptor that gives access to the data. */
 	close(chip->fd);
 	chip->fd=-1;
 
@@ -73,6 +79,7 @@ int akm8973_deinit(struct akm_chip_sensors *chip)
 	return 0;
 }
 
+/* This function publishes the data to the specified input node. */
 void akm8973_data_publish(struct akm_chip_sensors *chip, uint8_t type, void *data)
 {
 	struct input_event event;
@@ -84,22 +91,22 @@ void akm8973_data_publish(struct akm_chip_sensors *chip, uint8_t type, void *dat
 			event.type=EV_REL;
 			event.code=REL_X;
 			event.value=((struct akm_publish_vector *)data)->x;
-			write(chip->publisher->control_fd, &event, sizeof(event));
+			write(chip->publisher->fd, &event, sizeof(event));
 
 			event.type=EV_REL;
 			event.code=REL_Y;
 			event.value=((struct akm_publish_vector *)data)->y;
-			write(chip->publisher->control_fd, &event, sizeof(event));
+			write(chip->publisher->fd, &event, sizeof(event));
 
 			event.type=EV_REL;
 			event.code=REL_Z;
 			event.value=((struct akm_publish_vector *)data)->z;
-			write(chip->publisher->control_fd, &event, sizeof(event));
+			write(chip->publisher->fd, &event, sizeof(event));
 
 			event.type=EV_SYN;
 			event.code=0;
 			event.value=0;
-			write(chip->publisher->control_fd, &event, sizeof(event));
+			write(chip->publisher->fd, &event, sizeof(event));
 		break;
 	}
 	return;
@@ -109,71 +116,76 @@ int akm8973_publisher_init(struct akm_chip_sensors *chip)
 {
 	struct uinput_user_dev uinput_dev;
 	int rc;
-	int control_fd;
-	int publish_fd;
+	int fd;
 
 	memset(&uinput_dev, 0, sizeof(uinput_dev));
 
-	strcpy(uinput_dev.name, chip->publisher->input_name);
+	/* Set the uinput device name. */
+	strcpy(uinput_dev.name, chip->publisher->input_device_name);
 
+	/* Set the ids of the uinput device. */
 	uinput_dev.id.bustype=BUS_I2C;
 	uinput_dev.id.vendor=0;
 	uinput_dev.id.product=0;
 	uinput_dev.id.version=0;
 
-	control_fd=open("/dev/uinput", O_RDWR);
-	if(control_fd < 0)
+	/* Open the uinput node. */
+	fd=open(chip->publisher->input_node_name, O_RDWR);
+	if(fd < 0)
 	{
 		LOGE("Error while opening uinput device: %s.\n", strerror(errno));
 		return 1;
 	}
 
-	if(ioctl(control_fd, UI_SET_EVBIT, EV_REL) < 0)
+	/* Configure all that we're gonna need to publish data. */
+	if(ioctl(fd, UI_SET_EVBIT, EV_REL) < 0)
 	{
 		LOGE("Error while configuring uinput device: %s.\n", strerror(errno));
 		chip->publisher->deinit(chip);	
 		return 1;
 	}
 
-	if(ioctl(control_fd, UI_SET_RELBIT, REL_X) < 0)
+	if(ioctl(fd, UI_SET_RELBIT, REL_X) < 0)
 	{
 		LOGE("Error while configuring uinput device: %s.\n", strerror(errno));
 		chip->publisher->deinit(chip);	
 		return 1;
 	}
 
-	if(ioctl(control_fd, UI_SET_RELBIT, REL_Y) < 0)
+	if(ioctl(fd, UI_SET_RELBIT, REL_Y) < 0)
 	{
 		LOGE("Error while configuring uinput device: %s.\n", strerror(errno));
 		chip->publisher->deinit(chip);	
 		return 1;
 	}
 
-	if(ioctl(control_fd, UI_SET_RELBIT, REL_Z) < 0)
+	if(ioctl(fd, UI_SET_RELBIT, REL_Z) < 0)
 	{
 		LOGE("Error while configuring uinput device: %s.\n", strerror(errno));
 		chip->publisher->deinit(chip);	
 		return 1;
 	}
 
-	if(write(control_fd, &uinput_dev, sizeof(uinput_dev)) < 0)
+	/* Write the uinput device to the node and ask to create the input. */
+	if(write(fd, &uinput_dev, sizeof(uinput_dev)) < 0)
 	{
 		LOGE("Error while writing uinput device: %s.\n", strerror(errno));
 		chip->publisher->deinit(chip);	
 		return 1;
 	}
 
-	if(ioctl(control_fd, UI_DEV_CREATE) < 0)
+	if(ioctl(fd, UI_DEV_CREATE) < 0)
 	{
 		LOGE("Error while creating uinput device: %s.\n", strerror(errno));
 		chip->publisher->deinit(chip);	
 		return 1;
 	}
 
-	publish_fd=default_open_input_by_name(chip->publisher->input_name);
-
-	chip->publisher->control_fd=control_fd;
-	chip->publisher->publish_fd=publish_fd;
+	/* 
+	 * Copy the file descriptor to the uinput node and set the publisher as 
+	 * initialized 
+	 */
+	chip->publisher->fd=fd;
 	chip->publisher->inited=1;
 
 	return 0;
@@ -181,41 +193,33 @@ int akm8973_publisher_init(struct akm_chip_sensors *chip)
 
 int akm8973_publisher_deinit(struct akm_chip_sensors *chip)
 {
-	int rc;
 
-	if(ioctl(chip->publisher->control_fd, UI_DEV_DESTROY) < 0)
+	/* Ask to destroy the input node and close the file descriptor. */
+	if(ioctl(chip->publisher->fd, UI_DEV_DESTROY) < 0)
 	{
 		LOGE("Error while destroying uinput device: %s.\n", strerror(errno));
 	}
 
-	if(close(chip->publisher->control_fd) < 0)
+	if(close(chip->publisher->fd) < 0)
 	{
 		LOGE("Error while closing uinput device: %s.\n", strerror(errno));
 		return 1;
 	}
 
-	if(close(chip->publisher->publish_fd) < 0)
-	{
-		LOGE("Error while closing uinput device: %s.\n", strerror(errno));
-		return 1;
-	}
-
-	pthread_mutex_unlock(&(chip->mutex));
-	chip->publisher->control_fd=-1;
-	chip->publisher->publish_fd=-1;
+	chip->publisher->fd=-1;
 	chip->publisher->inited=0;
 	return 0;
 }
 
-int akm8973_set_delay(struct akm_sensor_info *sensor_info, uint64_t delay)
+int akm8973_set_delay(struct akm_sensor *sensor_info, uint64_t delay)
 {
 	int rc;
 
 	return 0;
 }
 
+/* This is the structure for the akm8973 chip. */
 struct akm_chip_sensors akm8973 = {
-	.registered=AKM_REGISTERED,
 	.publisher=&akm8973_publisher,
 	.sensors_count=2,
 	.sensors={
@@ -229,19 +233,20 @@ struct akm_chip_sensors akm8973 = {
 	.device_name="/dev/akm8973",
 };
 
+/* This is the structure for the akm8973 data publisher. */
 struct akm_publisher akm8973_publisher = 
 {
-	.control_fd=-1,
-	.publish_fd=-1,
-	.input_name="compass",
+	.fd=-1,
+	.input_device_name="compass",
+	.input_node_name="/dev/uinput",
 	.inited=0,
 	.init=akm8973_publisher_init,
 	.deinit=akm8973_publisher_deinit,
 	.data_publish=akm8973_data_publish,
 };
 
-struct akm_sensor_info akm8973_magnetic_field = {
-	.registered=AKM_REGISTERED,
+/* This is the magnetic field sensor structure. */
+struct akm_sensor akm8973_magnetic_field = {
 	.type=SENSOR_TYPE_MAGNETIC_FIELD,
 	.enabled=0,
 	.enable=default_enable,
@@ -250,8 +255,8 @@ struct akm_sensor_info akm8973_magnetic_field = {
 	.chip=&akm8973,
 };
 
-struct akm_sensor_info akm8973_orientation = {
-	.registered=AKM_REGISTERED,
+/* This is the orientation sensor structure. */
+struct akm_sensor akm8973_orientation = {
 	.type=SENSOR_TYPE_ORIENTATION,
 	.enabled=0,
 	.enable=default_enable,
