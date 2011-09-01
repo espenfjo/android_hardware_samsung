@@ -118,6 +118,10 @@ int akm8973_publisher_init(struct akm_chip_sensors *chip)
 	int rc;
 	int fd;
 
+	/* If the publisher is already inited, reeturn success. */
+	if(chip->publisher->inited)
+		return 0;
+
 	memset(&uinput_dev, 0, sizeof(uinput_dev));
 
 	/* Set the uinput device name. */
@@ -187,6 +191,9 @@ int akm8973_publisher_init(struct akm_chip_sensors *chip)
 	 */
 	chip->publisher->fd=fd;
 	chip->publisher->inited=1;
+
+	/* Sleep a moment to wait for the compass input to be created. */
+	usleep(100000);
 
 	return 0;
 }

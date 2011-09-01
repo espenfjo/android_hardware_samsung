@@ -93,7 +93,8 @@ void akm_deinit(void)
 
 	/* Deinit the publisher for each chip of the device. */
 	for(i=0 ; i < device_chips_count ; i++)
-		akm_device_chips[i]->publisher->deinit(akm_device_chips[i]);
+		if(!akm_device_chips[i]->publisher->inited)
+			akm_device_chips[i]->publisher->deinit(akm_device_chips[i]);
 }
 
 /* 
