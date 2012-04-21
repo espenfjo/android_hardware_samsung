@@ -25,7 +25,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := akm.c \
     sensors/default.c \
-    sensors/akm8973.c \
+    sensors/akm8975.c \
     sensors/kr3dm.c \
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include

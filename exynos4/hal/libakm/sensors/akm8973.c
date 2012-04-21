@@ -28,9 +28,9 @@
 #include "akm.h"
 #include "sensors/akm_sensors.h"
 
-#define SENSOR_NAME	"akm8973"
+#define SENSOR_NAME	"akm8975"
 
-int akm8973_init(struct akm_chip_sensors *chip)
+int akm8975_init(struct akm_chip_sensors *chip)
 {
 	int rc;
 	int fd;
@@ -59,7 +59,7 @@ exit:
 	return 0;
 }
 
-int akm8973_deinit(struct akm_chip_sensors *chip)
+int akm8975_deinit(struct akm_chip_sensors *chip)
 {
 	if(!chip->inited)
 		return 0;
@@ -80,7 +80,7 @@ int akm8973_deinit(struct akm_chip_sensors *chip)
 }
 
 /* This function publishes the data to the specified input node. */
-void akm8973_data_publish(struct akm_chip_sensors *chip, uint8_t type, void *data)
+void akm8975_data_publish(struct akm_chip_sensors *chip, uint8_t type, void *data)
 {
 	struct input_event event;
 	memset(&event, 0, sizeof(struct input_event));
@@ -112,7 +112,7 @@ void akm8973_data_publish(struct akm_chip_sensors *chip, uint8_t type, void *dat
 	return;
 }
 
-int akm8973_publisher_init(struct akm_chip_sensors *chip)
+int akm8975_publisher_init(struct akm_chip_sensors *chip)
 {
 	struct uinput_user_dev uinput_dev;
 	int rc;
@@ -198,7 +198,7 @@ int akm8973_publisher_init(struct akm_chip_sensors *chip)
 	return 0;
 }
 
-int akm8973_publisher_deinit(struct akm_chip_sensors *chip)
+int akm8975_publisher_deinit(struct akm_chip_sensors *chip)
 {
 
 	/* Ask to destroy the input node and close the file descriptor. */
@@ -218,56 +218,56 @@ int akm8973_publisher_deinit(struct akm_chip_sensors *chip)
 	return 0;
 }
 
-int akm8973_set_delay(struct akm_sensor *sensor_info, uint64_t delay)
+int akm8975_set_delay(struct akm_sensor *sensor_info, uint64_t delay)
 {
 	int rc;
 
 	return 0;
 }
 
-/* This is the structure for the akm8973 chip. */
-struct akm_chip_sensors akm8973 = {
-	.publisher=&akm8973_publisher,
+/* This is the structure for the akm8975 chip. */
+struct akm_chip_sensors akm8975 = {
+	.publisher=&akm8975_publisher,
 	.sensors_count=2,
 	.sensors={
-		&akm8973_magnetic_field,
-		&akm8973_orientation
+		&akm8975_magnetic_field,
+		&akm8975_orientation
 	},
-//	.data_get=akm8973_data_get,
-	.init=akm8973_init,
+//	.data_get=akm8975_data_get,
+	.init=akm8975_init,
 	.inited=0,
 	.fd=-1,
-	.device_name="/dev/akm8973",
+	.device_name="/dev/akm8975",
 };
 
-/* This is the structure for the akm8973 data publisher. */
-struct akm_publisher akm8973_publisher = 
+/* This is the structure for the akm8975 data publisher. */
+struct akm_publisher akm8975_publisher = 
 {
 	.fd=-1,
 	.input_device_name="compass",
 	.input_node_name="/dev/uinput",
 	.inited=0,
-	.init=akm8973_publisher_init,
-	.deinit=akm8973_publisher_deinit,
-	.data_publish=akm8973_data_publish,
+	.init=akm8975_publisher_init,
+	.deinit=akm8975_publisher_deinit,
+	.data_publish=akm8975_data_publish,
 };
 
 /* This is the magnetic field sensor structure. */
-struct akm_sensor akm8973_magnetic_field = {
+struct akm_sensor akm8975_magnetic_field = {
 	.type=SENSOR_TYPE_MAGNETIC_FIELD,
 	.enabled=0,
 	.enable=default_enable,
 	.disable=default_disable,
-	.set_delay=akm8973_set_delay,
-	.chip=&akm8973,
+	.set_delay=akm8975_set_delay,
+	.chip=&akm8975,
 };
 
 /* This is the orientation sensor structure. */
-struct akm_sensor akm8973_orientation = {
+struct akm_sensor akm8975_orientation = {
 	.type=SENSOR_TYPE_ORIENTATION,
 	.enabled=0,
 	.enable=default_enable,
 	.disable=default_disable,
-	.set_delay=akm8973_set_delay,
-	.chip=&akm8973,
+	.set_delay=akm8975_set_delay,
+	.chip=&akm8975,
 };

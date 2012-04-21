@@ -31,7 +31,7 @@
 
 /* 
  * Chip/sensor functions/structures definitions for the kr3dm accelerometer 
- * chip. It uses the akm8973 publisher. 
+ * chip. It uses the akm8975 publisher. 
  */
 
 int kr3dm_init(struct akm_chip_sensors *chip)
@@ -178,7 +178,7 @@ int kr3d_set_delay(struct akm_sensor *sensor_info, uint64_t delay)
 
 /* This is the structure for the kr3dm chip. */
 struct akm_chip_sensors kr3dm = {
-	.publisher=&akm8973_publisher,
+	.publisher=&akm8975_publisher,
 	.sensors_count=1,
 	.sensors={
 		&kr3dm_accelerometer

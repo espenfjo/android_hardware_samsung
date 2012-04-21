@@ -40,7 +40,7 @@
 struct akm_chip_sensors *akm_device_chips[]=
 {
 	&kr3dm,
-	&akm8973
+	&akm8975
 };
 
 #endif
@@ -51,7 +51,7 @@ struct akm_chip_sensors *akm_device_chips[]=
 struct akm_chip_sensors *akm_device_chips[]=
 {
 	&kr3dm,
-	&akm8973
+	&akm8975
 };
 
 #endif
