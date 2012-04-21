@@ -50,13 +50,11 @@ public:
 
 private:
     int loadAKMLibrary();
-    int update_delay();
     void *mLibAKM;
     uint32_t mEnabled;
     uint32_t mPendingMask;
     InputEventCircularReader mInputReader;
     sensors_event_t mPendingEvents[numSensors];
-    uint64_t mDelays[numSensors];
 };
 
 /*****************************************************************************/
