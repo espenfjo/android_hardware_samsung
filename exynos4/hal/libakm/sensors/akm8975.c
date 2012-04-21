@@ -245,7 +245,7 @@ struct akm_chip_sensors akm8975 = {
 struct akm_publisher akm8975_publisher = 
 {
 	.fd=-1,
-	.input_device_name="compass",
+	.input_device_name="compass_sensor",
 	.input_node_name="/dev/uinput",
 	.inited=0,
 	.init=akm8975_publisher_init,
