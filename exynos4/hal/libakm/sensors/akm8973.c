@@ -2,6 +2,7 @@
  * libakm: this is a free replacement for the non-free libakm that comes with
  * android devices such as the Nexus S.
  * Copyright (C) 2011  Paul Kocialkowski
+ * Copyright (C) 2012  Espen Fjellvær Olsen <espen@mrfjo.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,26 +88,26 @@ void akm8975_data_publish(struct akm_chip_sensors *chip, uint8_t type, void *dat
 
 	switch(type)
 	{
-		case SENSOR_TYPE_ACCELEROMETER:
-			event.type=EV_REL;
-			event.code=REL_X;
-			event.value=((struct akm_publish_vector *)data)->x;
-			write(chip->publisher->fd, &event, sizeof(event));
+	case SENSOR_TYPE_ACCELEROMETER:
+		event.type=EV_REL;
+		event.code=REL_X;
+		event.value=((struct akm_publish_vector *)data)->x;
+		write(chip->publisher->fd, &event, sizeof(event));
 
-			event.type=EV_REL;
-			event.code=REL_Y;
-			event.value=((struct akm_publish_vector *)data)->y;
-			write(chip->publisher->fd, &event, sizeof(event));
+		event.type=EV_REL;
+		event.code=REL_Y;
+		event.value=((struct akm_publish_vector *)data)->y;
+		write(chip->publisher->fd, &event, sizeof(event));
 
-			event.type=EV_REL;
-			event.code=REL_Z;
-			event.value=((struct akm_publish_vector *)data)->z;
-			write(chip->publisher->fd, &event, sizeof(event));
+		event.type=EV_REL;
+		event.code=REL_Z;
+		event.value=((struct akm_publish_vector *)data)->z;
+		write(chip->publisher->fd, &event, sizeof(event));
 
-			event.type=EV_SYN;
-			event.code=0;
-			event.value=0;
-			write(chip->publisher->fd, &event, sizeof(event));
+		event.type=EV_SYN;
+		event.code=0;
+		event.value=0;
+		write(chip->publisher->fd, &event, sizeof(event));
 		break;
 	}
 	return;

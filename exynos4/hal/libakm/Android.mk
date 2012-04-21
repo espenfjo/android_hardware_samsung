@@ -1,6 +1,7 @@
 # libakm: this is a free replacement for the non-free libakm that comes with
 # android devices such as the Nexus S.
 # Copyright (C) 2011  Paul Kocialkowski
+# Copyright (C) 2011  Espen Fjellvær Olsen <espen@mrfjo.org>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

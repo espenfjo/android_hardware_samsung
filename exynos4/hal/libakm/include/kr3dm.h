@@ -33,7 +33,7 @@ struct kr3dm_acceldata {
 #define KR3DM_IOCTL_BASE 'a'
 #define KR3DM_IOCTL_SET_DELAY       _IOW(KR3DM_IOCTL_BASE, 0, int64_t)
 #define KR3DM_IOCTL_GET_DELAY       _IOR(KR3DM_IOCTL_BASE, 1, int64_t)
-#define KR3DM_IOCTL_READ_ACCEL_XYZ  _IOR(KR3DM_IOCTL_BASE, 8, \
+#define KR3DM_IOCTL_READ_ACCEL_XYZ  _IOR(KR3DM_IOCTL_BASE, 8,           \
 						struct kr3dm_acceldata)
 
 #ifdef __KERNEL__

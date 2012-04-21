@@ -2,6 +2,7 @@
  * libakm: this is a free replacement for the non-free libakm that comes with
  * android devices such as the Nexus S.
  * Copyright (C) 2011  Paul Kocialkowski
+ * Copyright (C) 2012  Espen Fjellvær Olsen <espen@mrfjo.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -131,12 +132,12 @@ void *kr3d_data_get_thread(void *chip_p)
 			{
 				switch(chip->sensors[i]->type)
 				{
-					case SENSOR_TYPE_ACCELEROMETER:
-						data_vector.x=data.x * -1;
-						data_vector.y=data.y;
-						data_vector.z=data.z;
+				case SENSOR_TYPE_ACCELEROMETER:
+					data_vector.x=data.x * -1;
+					data_vector.y=data.y;
+					data_vector.z=data.z;
 
-						chip->publisher->data_publish(chip, chip->sensors[i]->type, &data_vector);
+					chip->publisher->data_publish(chip, chip->sensors[i]->type, &data_vector);
 					break;
 				}
 			}
