@@ -17,7 +17,7 @@
 
 
 #define ALOG_TAG "lights"
-#define LOG_NDEBUG 0
+#define ALOG_NDEBUG 0
 
 #include <cutils/log.h>
 
