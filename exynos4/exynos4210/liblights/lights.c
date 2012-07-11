@@ -16,7 +16,7 @@
  */
 
 
-#define LOG_TAG "lights"
+#define ALOG_TAG "lights"
 #define LOG_NDEBUG 0
 
 #include <cutils/log.h>
@@ -108,7 +108,7 @@ static int write_str(char const *path, char const *str)
     int fd;
     static int already_warned = 0;
 
-    LOGV("write_str: path=\"%s\", str=\"%s\".", path, str);
+    ALOGV("write_str: path=\"%s\", str=\"%s\".", path, str);
     fd = open(path, O_RDWR);
 
     if (fd >= 0) {
@@ -168,7 +168,7 @@ static void comp_led_states(struct led_state *red, struct led_state *blue,
         delay_off = state->flashOffMS;
         break;
     default:
-        LOGI("Unsuported flashMode %d, default to NONE.", state->flashMode);
+        ALOGI("Unsuported flashMode %d, default to NONE.", state->flashMode);
     case LIGHT_FLASH_NONE:
         delay_on = delay_off = 0;
         break;
@@ -182,7 +182,7 @@ static void comp_led_states(struct led_state *red, struct led_state *blue,
     blue->delay_on  = delay_on;
     blue->delay_off = delay_off;
 
-    LOGV("comp_led_states: red=(%u, %d, %d), blue=(%u, %d, %d).",
+    ALOGV("comp_led_states: red=(%u, %d, %d), blue=(%u, %d, %d).",
          red->enabled, red->delay_on, red->delay_off, blue->enabled,
             blue->delay_on, blue->delay_off);
 }
@@ -267,7 +267,7 @@ set_light_buttons(struct light_device_t* dev,
     int err = 0;
 
     pthread_mutex_lock(&g_lock);
-    LOGD("set_light_button on=%d\n", g_enable_touchlight ? 1 : 0);
+    ALOGD("set_light_button on=%d\n", g_enable_touchlight ? 1 : 0);
     err = write_int(BUTTON_FILE, g_enable_touchlight ? 1 : 0);
     pthread_mutex_unlock(&g_lock);
 
@@ -282,7 +282,7 @@ set_light_battery(struct light_device_t* dev,
    int res = 0;
 
 #ifdef LED_NOTIFICATION
-    LOGD("set_light_battery: color=%#010x, fM=%u, fOnMS=%d, fOffMs=%d.",
+    ALOGD("set_light_battery: color=%#010x, fM=%u, fOnMS=%d, fOffMs=%d.",
           state->color, state->flashMode, state->flashOnMS, state->flashOffMS);
 
     pthread_mutex_lock(&g_lock);
@@ -305,7 +305,7 @@ set_light_notification(struct light_device_t* dev,
     int res = 0;
 
 #ifdef LED_NOTIFICATION
-     LOGD("set_light_notification: color=%#010x, fM=%u, fOnMS=%d, fOffMs=%d.",
+     ALOGD("set_light_notification: color=%#010x, fM=%u, fOnMS=%d, fOffMs=%d.",
          state->color, state->flashMode, state->flashOnMS, state->flashOffMS);
 
     pthread_mutex_lock(&g_lock);
