@@ -253,7 +253,7 @@ static int set_src_dst_img_rect(hwc_layer_t *cur,
         }
     }
 
-    SEC_HWC_Log(HWC_ALOG_DEBUG,
+    SEC_HWC_Log(HWC_LOG_DEBUG,
             "crop information()::"
             "sourceCrop left(%d),top(%d),right(%d),bottom(%d),"
             "src_rect x(%d),y(%d),w(%d),h(%d),"
@@ -281,7 +281,7 @@ static int set_src_dst_img_rect(hwc_layer_t *cur,
     dst_rect->h = win->rect_info.h;
 
     /* Summery */
-    SEC_HWC_Log(HWC_ALOG_DEBUG,
+    SEC_HWC_Log(HWC_LOG_DEBUG,
             "set_src_dst_img_rect()::"
             "SRC w(%d),h(%d),f_w(%d),f_h(%d),fmt(0x%x),"
             "base(0x%x),offset(%d),paddr(0x%X),mem_id(%d),mem_type(%d)=>\r\n"
@@ -304,7 +304,7 @@ static int set_src_dst_img_rect(hwc_layer_t *cur,
 static int get_hwc_compos_decision(hwc_layer_t* cur, int iter, int win_cnt)
 {
     if(cur->flags & HWC_SKIP_LAYER  || !cur->handle) {
-        SEC_HWC_Log(HWC_ALOG_DEBUG, "%s::is_skip_layer  %d  cur->handle %x ",
+        SEC_HWC_Log(HWC_LOG_DEBUG, "%s::is_skip_layer  %d  cur->handle %x ",
                 __func__, cur->flags & HWC_SKIP_LAYER, cur->handle);
 
         return HWC_FRAMEBUFFER;
@@ -369,7 +369,7 @@ static int get_hwc_compos_decision(hwc_layer_t* cur, int iter, int win_cnt)
             break;
         }
 
-        SEC_HWC_Log(HWC_ALOG_DEBUG, "2nd iter###%s:: compositionType %d bpp %d"
+        SEC_HWC_Log(HWC_LOG_DEBUG, "2nd iter###%s:: compositionType %d bpp %d"
                 " format %x src[%d %d %d %d] dst[%d %d %d %d] srcImg[%d %d]",
                 __func__, compositionType, prev_handle->bpp,
                 prev_handle->format,
@@ -381,7 +381,7 @@ static int get_hwc_compos_decision(hwc_layer_t* cur, int iter, int win_cnt)
     }
 #endif
 
-    SEC_HWC_Log(HWC_ALOG_DEBUG,
+    SEC_HWC_Log(HWC_LOG_DEBUG,
             "%s::compositionType(%d)=>0:FB,1:OVERLAY \r\n"
             "   format(0x%x),magic(0x%x),flags(%d),size(%d),offset(%d)"
             "b_addr(0x%x),usage(%d),w(%d),h(%d),bpp(%d)",
@@ -416,7 +416,7 @@ static int assign_overlay_window(struct hwc_context_t *ctx, hwc_layer_t *cur,
 
     win = &ctx->win[win_idx];
 
-    SEC_HWC_Log(HWC_ALOG_DEBUG,
+    SEC_HWC_Log(HWC_LOG_DEBUG,
             "%s:: left(%d),top(%d),right(%d),bottom(%d),transform(%d)"
             "lcd_info.xres(%d),lcd_info.yres(%d)",
             "++assign_overlay_window()",
@@ -434,7 +434,7 @@ static int assign_overlay_window(struct hwc_context_t *ctx, hwc_layer_t *cur,
         win->rect_info.h = rect.h;
             //turnoff the window and set the window position with new conf...
         if (window_set_pos(win) < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::window_set_pos is failed : %s",
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::window_set_pos is failed : %s",
                     __func__, strerror(errno));
             ret = -1;
         }
@@ -444,7 +444,7 @@ static int assign_overlay_window(struct hwc_context_t *ctx, hwc_layer_t *cur,
     win->layer_index = layer_idx;
     win->status = HWC_WIN_RESERVED;
 
-    SEC_HWC_Log(HWC_ALOG_DEBUG,
+    SEC_HWC_Log(HWC_LOG_DEBUG,
             "%s:: win_x %d win_y %d win_w %d win_h %d  lay_idx %d win_idx %d\n",
             "--assign_overlay_window()",
             win->rect_info.x, win->rect_info.y, win->rect_info.w,
@@ -530,7 +530,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
 #endif
 
     if (list->numHwLayers != (ctx->num_of_fb_layer + ctx->num_of_hwc_layer))
-        SEC_HWC_Log(HWC_ALOG_DEBUG,
+        SEC_HWC_Log(HWC_LOG_DEBUG,
                 "%s:: numHwLayers %d num_of_fb_layer %d num_of_hwc_layer %d ",
                 __func__, list->numHwLayers, ctx->num_of_fb_layer,
                 ctx->num_of_hwc_layer);
@@ -620,7 +620,7 @@ static int hwc_set(hwc_composer_device_t *dev,
                             cur->transform);
 
                 if (ret < 0) {
-                    SEC_HWC_Log(HWC_ALOG_ERROR, "%s::runFimc fail : ret=%d\n",
+                    SEC_HWC_Log(HWC_LOG_ERROR, "%s::runFimc fail : ret=%d\n",
                                 __func__, ret);
                     skipped_window_mask |= (1 << i);
                     continue;
@@ -632,14 +632,14 @@ static int hwc_set(hwc_composer_device_t *dev,
                 if (win->power_state == 0)
                     window_show(win);
             } else {
-                SEC_HWC_Log(HWC_ALOG_ERROR,
+                SEC_HWC_Log(HWC_LOG_ERROR,
                         "%s:: error : layer %d compositionType should have been"
                         " HWC_OVERLAY ", __func__, win->layer_index);
                 skipped_window_mask |= (1 << i);
                 continue;
             }
         } else {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s:: error : window status should have "
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s:: error : window status should have "
                     "been HWC_WIN_RESERVED by now... ", __func__);
              skipped_window_mask |= (1 << i);
              continue;
@@ -657,7 +657,7 @@ static int hwc_set(hwc_composer_device_t *dev,
         ret = runG2d(ctx, &srcRect,  &dstRect,
                         cur->transform);
          if (ret < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::runG2d fail : ret=%d\n",
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::runG2d fail : ret=%d\n",
                     __func__, ret);
                    skipped_window_mask |= (1 << (ctx->num_of_hwc_layer - 1));
                    goto g2d_error;
@@ -790,29 +790,29 @@ static int hwc_device_close(struct hw_device_t *dev)
     int i;
     if (ctx) {
         if (destroyFimc(&ctx->fimc) < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyFimc fail", __func__);
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyFimc fail", __func__);
             ret = -1;
         }
 #ifdef SUB_TITLES_HWC
         if (destroyG2d(&ctx->g2d) < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyG2d() fail", __func__);
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyG2d() fail", __func__);
             ret = -1;
         }
 #endif
         if (destroyMem(&ctx->s3c_mem) < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyMem fail", __func__);
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyMem fail", __func__);
             ret = -1;
         }
 
 #ifdef USE_HW_PMEM
         if (destroyPmem(&ctx->sec_pmem) < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyPmem fail", __func__);
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyPmem fail", __func__);
             ret = -1;
         }
 #endif
         for (i = 0; i < NUM_OF_WIN; i++) {
             if (window_close(&ctx->win[i]) < 0)
-                SEC_HWC_Log(HWC_ALOG_DEBUG, "%s::window_close() fail", __func__);
+                SEC_HWC_Log(HWC_LOG_DEBUG, "%s::window_close() fail", __func__);
         }
 
         free(ctx);
@@ -855,7 +855,7 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
      /* open WIN0 & WIN1 here */
      for (int i = 0; i < NUM_OF_WIN; i++) {
         if (window_open(&(dev->win[i]), i)  < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR,
+            SEC_HWC_Log(HWC_LOG_ERROR,
                     "%s:: Failed to open window %d device ", __func__, i);
              status = -EINVAL;
              goto err;
@@ -863,7 +863,7 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
      }
 
     if (window_get_global_lcd_info(dev->win[0].fd, &dev->lcd_info) < 0) {
-        SEC_HWC_Log(HWC_ALOG_ERROR,
+        SEC_HWC_Log(HWC_LOG_ERROR,
                 "%s::window_get_global_lcd_info is failed : %s",
                 __func__, strerror(errno));
         status = -EINVAL;
@@ -887,14 +887,14 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
         win->rect_info.h = win->var_info.yres;
 
        if (window_set_pos(win) < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::window_set_pos is failed : %s",
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::window_set_pos is failed : %s",
                     __func__, strerror(errno));
             status = -EINVAL;
             goto err;
         }
 
         if (window_get_info(win, i) < 0) {
-            SEC_HWC_Log(HWC_ALOG_ERROR, "%s::window_get_info is failed : %s",
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s::window_get_info is failed : %s",
                     __func__, strerror(errno));
             status = -EINVAL;
             goto err;
@@ -904,53 +904,53 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
 
 #ifdef USE_HW_PMEM
     if (createPmem(&dev->sec_pmem, PMEM_SIZE) < 0) {
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::initPmem(%d) fail", __func__, PMEM_SIZE);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::initPmem(%d) fail", __func__, PMEM_SIZE);
     }
 #endif
 
     if (createMem(&dev->s3c_mem, 0, 0) < 0) {
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::createMem() fail (size=0)", __func__);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::createMem() fail (size=0)", __func__);
         status = -EINVAL;
         goto err;
     }
 
     //create PP
     if (createFimc(&dev->fimc) < 0) {
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::creatFimc() fail", __func__);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::creatFimc() fail", __func__);
         status = -EINVAL;
         goto err;
     }
 
 #ifdef SUB_TITLES_HWC
    if (createG2d(&dev->g2d) < 0) {
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::createG2d() fail", __func__);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::createG2d() fail", __func__);
         status = -EINVAL;
         goto err;
     }
 #endif
 
-    SEC_HWC_Log(HWC_ALOG_DEBUG, "%s:: hwc_device_open: SUCCESS", __func__);
+    SEC_HWC_Log(HWC_LOG_DEBUG, "%s:: hwc_device_open: SUCCESS", __func__);
 
     return 0;
 
 err:
     if (destroyFimc(&dev->fimc) < 0)
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyFimc() fail", __func__);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyFimc() fail", __func__);
 #ifdef SUB_TITLES_HWC
      if (destroyG2d(&dev->g2d) < 0)
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyG2d() fail", __func__);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyG2d() fail", __func__);
 #endif
     if (destroyMem(&dev->s3c_mem) < 0)
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyMem() fail", __func__);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyMem() fail", __func__);
 
 #ifdef USE_HW_PMEM
     if (destroyPmem(&dev->sec_pmem) < 0)
-        SEC_HWC_Log(HWC_ALOG_ERROR, "%s::destroyPmem() fail", __func__);
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::destroyPmem() fail", __func__);
 #endif
 
     for (int i = 0; i < NUM_OF_WIN; i++) {
         if (window_close(&dev->win[i]) < 0)
-            SEC_HWC_Log(HWC_ALOG_DEBUG, "%s::window_close() fail", __func__);
+            SEC_HWC_Log(HWC_LOG_DEBUG, "%s::window_close() fail", __func__);
     }
 
     return status;

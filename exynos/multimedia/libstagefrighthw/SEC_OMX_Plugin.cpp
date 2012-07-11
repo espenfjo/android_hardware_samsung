@@ -21,7 +21,6 @@
 #include <media/hardware/HardwareAPI.h>
 #include <media/stagefright/foundation/ADebug.h>
 
-
 namespace android {
 
 OMXPluginBase *createOMXPlugin() {
