@@ -19,7 +19,8 @@
 #include <dlfcn.h>
 
 #include <media/hardware/HardwareAPI.h>
-#include <media/hardware/MediaDebug.h>
+#include <media/stagefright/foundation/ADebug.h>
+
 
 namespace android {
 
