@@ -24,7 +24,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <camera/Camera.h>
-#include <media/stagefright/MetadataBufferType.h>
+#include <media/hardware/MetadataBufferType.h>
 
 #define VIDEO_COMMENT_MARKER_H          0xFFBE
 #define VIDEO_COMMENT_MARKER_L          0xFFBF
