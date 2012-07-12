@@ -17,7 +17,7 @@
 ifeq ($(TARGET_BOARD_PLATFORM),s5pc110)
 ifneq ($(TARGET_BOOTLOADER_BOARD_NAME),herring)
 # leaving out audio, camera and libsensors for now
-s5pc110_dirs := libhwcomposer liblight libs3cjepg libstagefrighthw sec_mm
+s5pc110_dirs := libhwcomposer liblight libs3cjpeg libstagefrighthw sec_mm
 
 include $(call all-named-subdir-makefiles,$(s5pc110_dirs))
 
