@@ -322,13 +322,6 @@ set_light_notification(struct light_device_t* dev,
 }
 
 static int
-set_light_attention(struct light_device_t* dev,
-        struct light_state_t const* state)
-{
-    return 0;
-}
-
-static int
 close_lights(struct light_device_t *dev)
 {
     if (dev) {
@@ -360,9 +353,6 @@ static int open_lights(const struct hw_module_t* module, char const* name,
     else if (0 == strcmp(LIGHT_ID_NOTIFICATIONS, name)) {
         set_light = set_light_notification;
     }
-    else if (0 == strcmp(LIGHT_ID_ATTENTION, name)) {
-        set_light = set_light_attention;
-    }
     else {
         return -EINVAL;
     }
@@ -387,7 +377,7 @@ static struct hw_module_methods_t lights_module_methods = {
     .open =  open_lights,
 };
 
-const struct hw_module_t HAL_MODULE_INFO_SYM = {
+struct hw_module_t HAL_MODULE_INFO_SYM = {
     .tag = HARDWARE_MODULE_TAG,
     .version_major = 1,
     .version_minor = 0,
