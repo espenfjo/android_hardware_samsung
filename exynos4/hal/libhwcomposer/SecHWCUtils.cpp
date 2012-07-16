@@ -637,7 +637,8 @@ int fimc_v4l2_S_ctrl(int fd)
 {
     struct v4l2_control vc;
 
-    vc.id = V4L2_CID_CACHEABLE;
+    //vc.id = V4L2_CID_CACHEABLE;
+    vc.id = V4L2_CID_MIN_BUFFERS_FOR_OUTPUT;
     vc.value = 1;
 
     if (ioctl(fd, VIDIOC_S_CTRL, &vc) < 0) {
