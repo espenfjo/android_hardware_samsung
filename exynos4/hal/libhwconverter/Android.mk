@@ -14,13 +14,10 @@
 
 ifeq ($(filter-out exynos4,$(TARGET_BOARD_PLATFORM)),)
 
-$(shell mkdir -p $(OUT)/obj/SHARED_LIBRARIES/libhwconverter_intermediates/)
-$(shell touch $(OUT)/obj/SHARED_LIBRARIES/libhwconverter_intermediates/export_includes)
-
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
-#LOCAL_PRELINK_MODULE := false
+LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := liblog libutils libcutils libfimc
 
 LOCAL_SRC_FILES := HardwareConverter.cpp
