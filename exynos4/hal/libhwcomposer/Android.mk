@@ -23,6 +23,10 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_SHARED_LIBRARIES := liblog libcutils libEGL \
 			  libGLESv1_CM
 
+ifeq ($(BOARD_USE_V4L2_ION),true)
+LOCAL_SHARED_LIBRARIES += libion
+endif
+
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/../include
 
@@ -33,14 +37,11 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/../libfimg
 ifeq ($(TARGET_SOC),exynos4210)
 LOCAL_CFLAGS += -DSAMSUNG_EXYNOS4210
 LOCAL_CFLAGS += -DBOARD_USE_V4L2_ION
+LOCAL_SHARED_LIBRARIES += libsamsungion
 endif
 
 ifeq ($(TARGET_SOC),exynos4x12)
 LOCAL_CFLAGS += -DSAMSUNG_EXYNOS4x12
-endif
-
-ifeq ($(BOARD_USE_V4L2_ION),true)
-LOCAL_SHARED_LIBRARIES += libsamsungion
 endif
 
 ifeq ($(BOARD_USES_HDMI),true)
