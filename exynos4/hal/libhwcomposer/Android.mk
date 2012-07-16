@@ -24,7 +24,7 @@ LOCAL_SHARED_LIBRARIES := liblog libcutils libEGL \
 			  libGLESv1_CM
 
 ifeq ($(BOARD_USE_V4L2_ION),true)
-LOCAL_SHARED_LIBRARIES += libion
+LOCAL_SHARED_LIBRARIES += libsamsungion
 endif
 
 LOCAL_C_INCLUDES := \
