@@ -27,6 +27,8 @@
 #include <cutils/atomic.h>
 
 #include <EGL/egl.h>
+#include <sys/prctl.h>
+#include <fcntl.h>
 
 #include "SecHWCUtils.h"
 
@@ -881,6 +883,87 @@ static int hwc_set(hwc_composer_device_t *dev,
     return 0;
 }
 
+static void hwc_registerProcs(struct hwc_composer_device* dev,
+        hwc_procs_t const* procs)
+{
+    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+    ctx->procs = const_cast<hwc_procs_t *>(procs);
+}
+
+static int hwc_query(struct hwc_composer_device* dev,
+        int what, int* value)
+{
+    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+
+    switch (what) {
+    case HWC_BACKGROUND_LAYER_SUPPORTED:
+        // we don't support the background layer yet
+        value[0] = 0;
+        break;
+    case HWC_VSYNC_PERIOD:
+        // vsync period in nanosecond
+        value[0] = 1000000000.0 / 57;
+        break;
+    default:
+        // unsupported query
+        return -EINVAL;
+    }
+    return 0;
+}
+
+static int hwc_eventControl(struct hwc_composer_device* dev,
+        int event, int enabled)
+{
+    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+
+    switch (event) {
+    case HWC_EVENT_VSYNC:
+        int val = !!enabled;
+        int err = ioctl(ctx->ui_win.fd, S3CFB_SET_VSYNC_INT, &val);
+        if (err < 0)
+            return -errno;
+
+        return 0;
+    }
+
+    return -EINVAL;
+}
+
+
+static void *hwc_vsync_sysfs_loop(void *data)
+{
+    static char buf[4096];
+    int vsync_timestamp_fd;
+    fd_set exceptfds;
+    int res;
+    int64_t timestamp = 0;
+    hwc_context_t * ctx = (hwc_context_t *)(data);
+
+    vsync_timestamp_fd = open("/sys/devices/platform/samsung-pd.2/s3cfb.0/vsync_time", O_RDONLY);
+    if (!vsync_timestamp_fd)
+        return NULL;
+
+    char thread_name[64] = "hwcVsyncThread";
+    prctl(PR_SET_NAME, (unsigned long) &thread_name, 0, 0, 0);
+    setpriority(PRIO_PROCESS, 0, -20);
+    memset(buf, 0, sizeof(buf));
+
+    SEC_HWC_Log(HWC_LOG_DEBUG,"Using sysfs mechanism for VSYNC notification");
+
+    FD_ZERO(&exceptfds);
+    FD_SET(vsync_timestamp_fd, &exceptfds);
+
+    do {
+        ssize_t len = read(vsync_timestamp_fd, buf, sizeof(buf));
+        timestamp = strtoull(buf, NULL, 0);
+        ctx->procs->vsync(ctx->procs, 0, timestamp);
+        select(vsync_timestamp_fd + 1, NULL, NULL, &exceptfds, NULL);
+        lseek(vsync_timestamp_fd, 0, SEEK_SET);
+    } while (1);
+
+    return NULL;
+}
+
 static int hwc_device_close(struct hw_device_t *dev)
 {
     struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
@@ -906,6 +989,7 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
         struct hw_device_t** device)
 {
     int status = 0;
+    int err    = 0;
     struct hwc_win_info_t   *win;
 
     if (strcmp(name, HWC_HARDWARE_COMPOSER))
@@ -985,6 +1069,13 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
     if (createFimc(&dev->fimc) < 0) {
         SEC_HWC_Log(HWC_LOG_ERROR, "%s::creatFimc() fail", __func__);
         status = -EINVAL;
+        goto err;
+    }
+
+    err = pthread_create(&dev->vsync_thread, NULL, hwc_vsync_sysfs_loop, dev);
+    if (err) {
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::pthread_create() failed : %s", __func__, strerror(err));
+        status = -err;
         goto err;
     }
 

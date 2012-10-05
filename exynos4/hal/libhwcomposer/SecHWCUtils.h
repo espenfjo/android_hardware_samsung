@@ -40,6 +40,7 @@
 #include "sec_utils.h"
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <hardware/gralloc.h>
 
 #include "linux/fb.h"
@@ -153,6 +154,7 @@ struct hwc_context_t {
 
     /* our private state goes below here */
     struct hwc_win_info_t     win[NUM_OF_WIN];
+	struct hwc_win_info_t     ui_win;
 #ifdef SKIP_DUMMY_UI_LAY_DRAWING
     struct hwc_ui_lay_info    win_virt[NUM_OF_DUMMY_WIN];
     int                       fb_lay_skip_initialized;
@@ -164,6 +166,10 @@ struct hwc_context_t {
 
     struct fb_var_screeninfo  lcd_info;
     s5p_fimc_t                fimc;
+    hwc_procs_t               *procs;
+    pthread_t                 uevent_thread;
+    pthread_t                 vsync_thread;
+	
     int                       num_of_fb_layer;
     int                       num_of_hwc_layer;
     int                       num_of_fb_layer_prev;
