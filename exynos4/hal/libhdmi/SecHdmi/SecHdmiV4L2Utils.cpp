@@ -77,129 +77,129 @@ void display_menu(void)
     audio.channelNum = CH_2;
     audio.sampleFreq = SF_44KHZ;
 
-    LOGI("=============== HDMI Audio  =============\n");
+    ALOGI("=============== HDMI Audio  =============\n");
 
     if (EDIDAudioModeSupport(&audio))
-        LOGI("=  2CH_PCM 44100Hz audio supported      =\n");
+        ALOGI("=  2CH_PCM 44100Hz audio supported      =\n");
 
-    LOGI("========= HDMI Mode & Color Space =======\n");
+    ALOGI("========= HDMI Mode & Color Space =======\n");
 
     video.mode = HDMI;
     if (EDIDHDMIModeSupport(&video)) {
         video.colorSpace = HDMI_CS_YCBCR444;
         if (EDIDColorSpaceSupport(&video))
-            LOGI("=  1. HDMI(YCbCr)                       =\n");
+            ALOGI("=  1. HDMI(YCbCr)                       =\n");
 
         video.colorSpace = HDMI_CS_RGB;
         if (EDIDColorSpaceSupport(&video))
-            LOGI("=  2. HDMI(RGB)                         =\n");
+            ALOGI("=  2. HDMI(RGB)                         =\n");
     } else {
         video.mode = DVI;
         if (EDIDHDMIModeSupport(&video))
-            LOGI("=  3. DVI                               =\n");
+            ALOGI("=  3. DVI                               =\n");
     }
 
-    LOGI("===========    HDMI Rseolution   ========\n");
+    ALOGI("===========    HDMI Rseolution   ========\n");
 
     /* 480P */
     video.resolution = v720x480p_60Hz;
     video.pixelAspectRatio = HDMI_PIXEL_RATIO_16_9;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  4. 480P_60_16_9    (0x04000000)    =\n");
+        ALOGI("=  4. 480P_60_16_9    (0x04000000)    =\n");
 
     video.resolution = v640x480p_60Hz;
     video.pixelAspectRatio = HDMI_PIXEL_RATIO_4_3;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  5. 480P_60_4_3 (0x05000000)    =\n");
+        ALOGI("=  5. 480P_60_4_3 (0x05000000)    =\n");
 
     /* 576P */
     video.resolution = v720x576p_50Hz;
     video.pixelAspectRatio = HDMI_PIXEL_RATIO_16_9;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  6. 576P_50_16_9    (0x06000000)    =\n");
+        ALOGI("=  6. 576P_50_16_9    (0x06000000)    =\n");
 
     video.pixelAspectRatio = HDMI_PIXEL_RATIO_4_3;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  7. 576P_50_4_3 (0x07000000)    =\n");
+        ALOGI("=  7. 576P_50_4_3 (0x07000000)    =\n");
 
     /* 720P 60 */
     video.resolution = v1280x720p_60Hz;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  8. 720P_60         (0x08000000)    =\n");
+        ALOGI("=  8. 720P_60         (0x08000000)    =\n");
 
     /* 720P_50 */
     video.resolution = v1280x720p_50Hz;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  9. 720P_50         (0x09000000)    =\n");
+        ALOGI("=  9. 720P_50         (0x09000000)    =\n");
 
     /* 1080P_60 */
     video.resolution = v1920x1080p_60Hz;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  a. 1080P_60        (0x0a000000)    =\n");
+        ALOGI("=  a. 1080P_60        (0x0a000000)    =\n");
 
     /* 1080P_50 */
     video.resolution = v1920x1080p_50Hz;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  b. 1080P_50        (0x0b000000)    =\n");
+        ALOGI("=  b. 1080P_50        (0x0b000000)    =\n");
 
     /* 1080I_60 */
     video.resolution = v1920x1080i_60Hz;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  c. 1080I_60        (0x0c000000)    =\n");
+        ALOGI("=  c. 1080I_60        (0x0c000000)    =\n");
 
     /* 1080I_50 */
     video.resolution = v1920x1080i_50Hz;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  d. 1080I_50        (0x0d000000)    =\n");
+        ALOGI("=  d. 1080I_50        (0x0d000000)    =\n");
 
     /* 1080P_30 */
     video.resolution = v1920x1080p_30Hz;
     video.hdmi_3d_format = HDMI_2D_VIDEO_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  e. 1080P_30        (0x12000000)    =\n");
+        ALOGI("=  e. 1080P_30        (0x12000000)    =\n");
 
-    LOGI("===========    HDMI 3D Format   ========\n");
+    ALOGI("===========    HDMI 3D Format   ========\n");
 
     /* 720P_60_SBS_HALF */
     video.resolution = v1280x720p_60Hz;
     video.hdmi_3d_format = HDMI_3D_SSH_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  f. 720P_60_SBS_HALF    (0x13000000)    =\n");
+        ALOGI("=  f. 720P_60_SBS_HALF    (0x13000000)    =\n");
 
     /* 720P_59_SBS_HALF */
     video.resolution = v1280x720p_60Hz;
     video.hdmi_3d_format = HDMI_3D_SSH_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  10. 720P_59_SBS_HALF    (0x14000000)    =\n");
+        ALOGI("=  10. 720P_59_SBS_HALF    (0x14000000)    =\n");
 
     /* 720P_50_TB */
     video.resolution = v1280x720p_50Hz;
     video.hdmi_3d_format = HDMI_3D_TB_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  11. 720P_50_TB          (0x15000000)    =\n");
+        ALOGI("=  11. 720P_50_TB          (0x15000000)    =\n");
 
     /* 1080P_24_TB */
     video.resolution = v1920x1080p_24Hz;
     video.hdmi_3d_format = HDMI_3D_TB_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  12. 1080P_24_TB          (0x16000000)    =\n");
+        ALOGI("=  12. 1080P_24_TB          (0x16000000)    =\n");
 
     /* 1080P_23_TB */
     video.resolution = v1920x1080p_24Hz;
     video.hdmi_3d_format = HDMI_3D_TB_FORMAT;
     if (EDIDVideoResolutionSupport(&video))
-        LOGI("=  13. 1080P_24_TB          (0x17000000)    =\n");
-    LOGI("=========================================\n");
+        ALOGI("=  13. 1080P_24_TB          (0x17000000)    =\n");
+    ALOGI("=========================================\n");
 }
 
 int tvout_open(const char *fp_name)
@@ -210,7 +210,7 @@ int tvout_open(const char *fp_name)
 
     fp = open(fp_name, O_RDWR);
     if (fp < 0)
-        LOGE("drv (%s) open failed!!\n", fp_name);
+        ALOGE("drv (%s) open failed!!\n", fp_name);
 
     return fp;
 }
@@ -232,7 +232,7 @@ int tvout_init(v4l2_std_id std_id)
     if (fp_tvout <= 0) {
         fp_tvout = tvout_open(TVOUT_DEV);
         if (fp_tvout < 0) {
-            LOGE("tvout video drv open failed\n");
+            ALOGE("tvout video drv open failed\n");
             return -1;
         }
     }
@@ -240,7 +240,7 @@ int tvout_init(v4l2_std_id std_id)
     if (output_type >= V4L2_OUTPUT_TYPE_DIGITAL &&
         output_type <= V4L2_OUTPUT_TYPE_DVI)
         if (ioctl(fp_tvout, VIDIOC_HDCP_ENABLE, g_hdcp_en) < 0)
-            LOGE("tvout_init" "VIDIOC_HDCP_ENABLE failed %d\n", errno);
+            ALOGE("tvout_init" "VIDIOC_HDCP_ENABLE failed %d\n", errno);
 
     /* ============== query capability============== */
     tvout_v4l2_querycap(fp_tvout);
@@ -264,7 +264,7 @@ int tvout_init(v4l2_std_id std_id)
     } while (ret >=0);
 
     if (!matched) {
-        LOGE("no matched output type [type : 0x%08x]\n", output_type);
+        ALOGE("no matched output type [type : 0x%08x]\n", output_type);
         return -1;
     }
 
@@ -310,7 +310,7 @@ int tvout_v4l2_querycap(int fp)
     ret = ioctl(fp, VIDIOC_QUERYCAP, &cap);
 
     if (ret < 0) {
-        LOGE("tvout_v4l2_querycap" "VIDIOC_QUERYCAP failed %d\n", errno);
+        ALOGE("tvout_v4l2_querycap" "VIDIOC_QUERYCAP failed %d\n", errno);
         return ret;
     }
 
@@ -335,7 +335,7 @@ int tvout_v4l2_g_std(int fp, v4l2_std_id *std_id)
 
     ret = ioctl(fp, VIDIOC_G_STD, std_id);
     if (ret < 0) {
-        LOGE("tvout_v4l2_g_std" "VIDIOC_G_STD failed %d\n", errno);
+        ALOGE("tvout_v4l2_g_std" "VIDIOC_G_STD failed %d\n", errno);
         return ret;
     }
 
@@ -350,7 +350,7 @@ int tvout_v4l2_s_std(int fp, v4l2_std_id std_id)
 
     ret = ioctl(fp, VIDIOC_S_STD, &std_id);
     if (ret < 0) {
-        LOGE("tvout_v4l2_s_std" "VIDIOC_S_STD failed %d\n", errno);
+        ALOGE("tvout_v4l2_s_std" "VIDIOC_S_STD failed %d\n", errno);
         return ret;
     }
 
@@ -371,7 +371,7 @@ int tvout_v4l2_enum_std(int fp, struct v4l2_standard *std, v4l2_std_id std_id)
     std->index = 0;
     while (0 == ioctl (fp, VIDIOC_ENUMSTD, std)) {
         if (std->id & std_id)
-            LOGV("tvout_v4l2_enum_std" "Current video standard: %s\n", std->name);
+            ALOGV("tvout_v4l2_enum_std" "Current video standard: %s\n", std->name);
 
         std->index++;
     }
@@ -394,7 +394,7 @@ int tvout_v4l2_enum_output(int fp, struct v4l2_output *output)
     ret = ioctl(fp, VIDIOC_ENUMOUTPUT, output);
 
     if (ret >=0)
-        LOGV("tvout_v4l2_enum_output" "enum. output [index = %d] :: type : 0x%08x , name = %s\n",
+        ALOGV("tvout_v4l2_enum_output" "enum. output [index = %d] :: type : 0x%08x , name = %s\n",
                 output->index,output->type,output->name);
 
     return ret;
@@ -414,7 +414,7 @@ int tvout_v4l2_s_output(int fp, int index)
 
     ret = ioctl(fp, VIDIOC_S_OUTPUT, &index);
     if (ret < 0) {
-        LOGE("tvout_v4l2_s_output" "VIDIOC_S_OUTPUT failed %d\n", errno);
+        ALOGE("tvout_v4l2_s_output" "VIDIOC_S_OUTPUT failed %d\n", errno);
         return ret;
     }
 
@@ -429,10 +429,10 @@ int tvout_v4l2_g_output(int fp, int *index)
 
     ret = ioctl(fp, VIDIOC_G_OUTPUT, index);
     if (ret < 0) {
-        LOGE("tvout_v4l2_g_output" "VIDIOC_G_OUTPUT failed %d\n", errno);
+        ALOGE("tvout_v4l2_g_output" "VIDIOC_G_OUTPUT failed %d\n", errno);
         return ret;
     } else {
-        LOGV("tvout_v4l2_g_output" "Current output index %d\n", *index);
+        ALOGV("tvout_v4l2_g_output" "Current output index %d\n", *index);
     }
 
     return ret;
@@ -451,7 +451,7 @@ int tvout_v4l2_enum_fmt(int fp, struct v4l2_fmtdesc *desc)
 
     desc->index = 0;
     while (0 == ioctl(fp, VIDIOC_ENUM_FMT, desc)) {
-        LOGV("tvout_v4l2_enum_fmt" "enum. fmt [id : 0x%08x] :: type = 0x%08x, name = %s, pxlfmt = 0x%08x\n",
+        ALOGV("tvout_v4l2_enum_fmt" "enum. fmt [id : 0x%08x] :: type = 0x%08x, name = %s, pxlfmt = 0x%08x\n",
                 desc->index,
                 desc->type,
                 desc->description,
@@ -474,11 +474,11 @@ int tvout_v4l2_g_fmt(int fp, int buf_type, void* ptr)
 
     ret = ioctl(fp, VIDIOC_G_FMT, &format);
     if (ret < 0) {
-        LOGE("tvout_v4l2_g_fmt" "type : %d, VIDIOC_G_FMT failed %d\n", buf_type, errno);
+        ALOGE("tvout_v4l2_g_fmt" "type : %d, VIDIOC_G_FMT failed %d\n", buf_type, errno);
         return ret;
     } else {
         memcpy(fmt_param, format.fmt.raw_data, sizeof(struct v4l2_pix_format_s5p_tvout));
-        LOGV("tvout_v4l2_g_fmt" "get. fmt [base_c : 0x%08x], [base_y : 0x%08x] type = 0x%08x, width = %d, height = %d\n",
+        ALOGV("tvout_v4l2_g_fmt" "get. fmt [base_c : 0x%08x], [base_y : 0x%08x] type = 0x%08x, width = %d, height = %d\n",
                 fmt_param->base_c,
                 fmt_param->base_y,
                 fmt_param->pix_fmt.pixelformat,
@@ -523,7 +523,7 @@ int tvout_v4l2_s_fmt(int fp, int buf_type, void *ptr)
 
     ret = ioctl(fp, VIDIOC_S_FMT, &format);
     if (ret < 0) {
-        LOGE("tvout_v4l2_s_fmt [tvout_v4l2_s_fmt] : type : %d, VIDIOC_S_FMT failed %d\n",
+        ALOGE("tvout_v4l2_s_fmt [tvout_v4l2_s_fmt] : type : %d, VIDIOC_S_FMT failed %d\n",
                 buf_type, errno);
         return ret;
     }
@@ -539,11 +539,11 @@ int tvout_v4l2_g_fbuf(int fp, struct v4l2_framebuffer *frame)
 
     ret = ioctl(fp, VIDIOC_G_FBUF, frame);
     if (ret < 0) {
-        LOGE("tvout_v4l2_g_fbuf" "VIDIOC_STREAMON failed %d\n", errno);
+        ALOGE("tvout_v4l2_g_fbuf" "VIDIOC_STREAMON failed %d\n", errno);
         return ret;
     }
 
-    LOGV("tvout_v4l2_g_fbuf" "get. fbuf: base = 0x%08X, pixel format = %d\n",
+    ALOGV("tvout_v4l2_g_fbuf" "get. fbuf: base = 0x%08X, pixel format = %d\n",
             frame->base,
             frame->fmt.pixelformat);
     return 0;
@@ -557,7 +557,7 @@ int tvout_v4l2_s_fbuf(int fp, struct v4l2_framebuffer *frame)
 
     ret = ioctl(fp, VIDIOC_S_FBUF, frame);
     if (ret < 0) {
-        LOGE("tvout_v4l2_s_fbuf" "VIDIOC_STREAMON failed %d\n", errno);
+        ALOGE("tvout_v4l2_s_fbuf" "VIDIOC_STREAMON failed %d\n", errno);
         return ret;
     }
     return 0;
@@ -571,7 +571,7 @@ int tvout_v4l2_s_baseaddr(int fp, void *base_addr)
 
     ret = ioctl(fp, S5PTVFB_WIN_SET_ADDR, base_addr);
     if (ret < 0) {
-        LOGE("tvout_v4l2_baseaddr" "VIDIOC_S_BASEADDR failed %d\n", errno);
+        ALOGE("tvout_v4l2_baseaddr" "VIDIOC_S_BASEADDR failed %d\n", errno);
         return ret;
     }
     return 0;
@@ -586,7 +586,7 @@ int tvout_v4l2_g_crop(int fp, unsigned int type, struct v4l2_rect *rect)
     crop.type = (enum v4l2_buf_type)type;
     ret = ioctl(fp, VIDIOC_G_CROP, &crop);
     if (ret < 0) {
-        LOGE("tvout_v4l2_g_crop" "VIDIOC_G_CROP failed %d\n", errno);
+        ALOGE("tvout_v4l2_g_crop" "VIDIOC_G_CROP failed %d\n", errno);
         return ret;
     }
 
@@ -595,7 +595,7 @@ int tvout_v4l2_g_crop(int fp, unsigned int type, struct v4l2_rect *rect)
     rect->width = crop.c.width;
     rect->height    = crop.c.height;
 
-    LOGV("tvout_v4l2_g_crop" "get. crop : left = %d, top = %d, width  = %d, height = %d\n",
+    ALOGV("tvout_v4l2_g_crop" "get. crop : left = %d, top = %d, width  = %d, height = %d\n",
             rect->left,
             rect->top,
             rect->width,
@@ -619,7 +619,7 @@ int tvout_v4l2_s_crop(int fp, unsigned int type, struct v4l2_rect *rect)
 
     ret = ioctl(fp, VIDIOC_S_CROP, &crop);
     if (ret < 0) {
-        LOGE("tvout_v4l2_s_crop" "VIDIOC_S_CROP failed %d\n", errno);
+        ALOGE("tvout_v4l2_s_crop" "VIDIOC_S_CROP failed %d\n", errno);
         return ret;
     }
 
@@ -634,7 +634,7 @@ int tvout_v4l2_start_overlay(int fp)
 
     ret = ioctl(fp, VIDIOC_OVERLAY, &start);
     if (ret < 0) {
-        LOGE("tvout_v4l2_start_overlay" "VIDIOC_OVERLAY failed\n");
+        ALOGE("tvout_v4l2_start_overlay" "VIDIOC_OVERLAY failed\n");
         return ret;
     }
 
@@ -649,7 +649,7 @@ int tvout_v4l2_stop_overlay(int fp)
 
     ret = ioctl(fp, VIDIOC_OVERLAY, &stop);
     if (ret < 0) {
-        LOGE("tvout_v4l2_stop_overlay" "VIDIOC_OVERLAY failed\n");
+        ALOGE("tvout_v4l2_stop_overlay" "VIDIOC_OVERLAY failed\n");
         return ret;
     }
 
@@ -667,7 +667,7 @@ int hdmi_init_layer(int layer)
         if (fp_tvout_v <= 0) {
             fp_tvout_v = tvout_open(TVOUT_DEV_V);
             if (fp_tvout_v < 0) {
-                LOGE("tvout video layer open failed\n");
+                ALOGE("tvout video layer open failed\n");
                 return -1;
             }
             fd = fp_tvout_v;
@@ -677,7 +677,7 @@ int hdmi_init_layer(int layer)
         if (fp_tvout_g0 <= 0) {
             fp_tvout_g0 = fb_open(TVOUT_FB_G0);
             if (fp_tvout_g0 < 0) {
-                LOGE("tvout graphic layer 0 open failed\n");
+                ALOGE("tvout graphic layer 0 open failed\n");
                 return -1;
             }
             fd = fp_tvout_g0;
@@ -687,14 +687,14 @@ int hdmi_init_layer(int layer)
         if (fp_tvout_g1 <= 0) {
             fp_tvout_g1 = fb_open(TVOUT_FB_G1);
             if (fp_tvout_g1 < 0) {
-                LOGE("tvout graphic layer 1 open failed\n");
+                ALOGE("tvout graphic layer 1 open failed\n");
                 return -1;
             }
             fd = fp_tvout_g1;
         }
         break;
     default :
-        LOGE("%s::unmathced layer(%d) fail", __func__, layer);
+        ALOGE("%s::unmathced layer(%d) fail", __func__, layer);
         fd = -1;
         break;
     }
@@ -728,7 +728,7 @@ int hdmi_deinit_layer(int layer)
         }
         break;
     default :
-        LOGE("%s::unmathced layer(%d) fail", __func__, layer);
+        ALOGE("%s::unmathced layer(%d) fail", __func__, layer);
         ret = -1;
         break;
     }
@@ -765,7 +765,7 @@ int hdmi_set_v_param(int layer,
     int round_up_src_w;
     int round_up_src_h;
     if (fp_tvout_v <= 0) {
-        LOGE("fp_tvout is < 0 fail\n");
+        ALOGE("fp_tvout is < 0 fail\n");
         return -1;
     }
 
@@ -914,7 +914,7 @@ int hdmi_gl_set_param(int layer,
             g2d_rotation = ROT_270;
             break;
         default:
-            LOGE("%s::invalid rotVal(%d) fail", __func__, rotVal);
+            ALOGE("%s::invalid rotVal(%d) fail", __func__, rotVal);
             return -1;
             break;
         }
@@ -926,7 +926,7 @@ int hdmi_gl_set_param(int layer,
         BlitParam = {BLIT_OP_SRC, g2d_param, &srcImage, NULL, NULL, &dstImage, BLIT_SYNC, 0};
 
         if (stretchFimgApi(&BlitParam) < 0) {
-            LOGE("%s::stretchFimgApi() fail", __func__);
+            ALOGE("%s::stretchFimgApi() fail", __func__);
             return -1;
         }
 
@@ -948,7 +948,7 @@ int hdmi_gl_set_param(int layer,
         put_vscreeninfo(fp_tvout_g, &var);
 
         if (ioctl(fp_tvout_g, S5PTVFB_WIN_POSITION, &window) < 0) {
-            LOGE("%s::S5PTVFB_WIN_POSITION ioctl failed.", __func__);
+            ALOGE("%s::S5PTVFB_WIN_POSITION ioctl failed.", __func__);
             return -1;
         }
     }
@@ -1004,7 +1004,7 @@ int hdmi_gl_set_param(int layer,
     tvout_v4l2_s_baseaddr(fp_tvout_g, (void *)src_y_address);
     put_vscreeninfo(fp_tvout_g, &var);
     if (ioctl(fp_tvout_g, S5PTVFB_WIN_POSITION, &window) < 0) {
-        LOGE("%s:: S5PTVFB_WIN_POSITION ioctl failed.", __func__);
+        ALOGE("%s:: S5PTVFB_WIN_POSITION ioctl failed.", __func__);
         return -1;
     }
 
@@ -1019,14 +1019,14 @@ int hdmi_cable_status()
 
     fp_hpd = open(HPD_DEV, O_RDWR);
     if (fp_hpd <= 0) {
-        LOGE("hpd drv open failed\n");
+        ALOGE("hpd drv open failed\n");
         return -1;
     }
 
     //Delay about 0.3s
     usleep(500000);
     if (ioctl(fp_hpd, HPD_GET_STATE, &cable_status) < 0) {
-        LOGE("hpd drv HPD_GET_STATE ioctl failed\n");
+        ALOGE("hpd drv HPD_GET_STATE ioctl failed\n");
         cable_status = -1;
     }
 
@@ -1053,7 +1053,7 @@ int hdmi_outputmode_2_v4l2_output_type(int output_mode)
         v4l2_output_type = V4L2_OUTPUT_TYPE_COMPOSITE;
         break;
     default:
-        LOGE("%s::unmathced HDMI_mode(%d)", __func__, output_mode);
+        ALOGE("%s::unmathced HDMI_mode(%d)", __func__, output_mode);
         v4l2_output_type = -1;
         break;
     }
@@ -1079,7 +1079,7 @@ int hdmi_v4l2_output_type_2_outputmode(int v4l2_output_type)
         outputMode = COMPOSITE_OUTPUT_MODE;
         break;
     default:
-        LOGE("%s::unmathced v4l2_output_type(%d)", __func__, v4l2_output_type);
+        ALOGE("%s::unmathced v4l2_output_type(%d)", __func__, v4l2_output_type);
         outputMode = -1;
         break;
     }
@@ -1114,7 +1114,7 @@ int composite_std_2_v4l2_std_id(int std)
         std_id = V4L2_STD_PAL_60;
         break;
     default:
-        LOGE("%s::unmathced composite_std(%d)", __func__, std);
+        ALOGE("%s::unmathced composite_std(%d)", __func__, std);
         break;
     }
 
@@ -1137,14 +1137,14 @@ int hdmi_check_output_mode(int v4l2_output_type)
         video.mode = HDMI;
         if (!EDIDHDMIModeSupport(&video)) {
             calbirate_v4l2_mode = V4L2_OUTPUT_TYPE_DVI;
-            LOGI("Change mode into DVI\n");
+            ALOGI("Change mode into DVI\n");
             break;
         }
 
         video.colorSpace = HDMI_CS_YCBCR444;
         if (!EDIDColorSpaceSupport(&video)) {
             calbirate_v4l2_mode = V4L2_OUTPUT_TYPE_HDMI_RGB;
-            LOGI("Change mode into HDMI_RGB\n");
+            ALOGI("Change mode into HDMI_RGB\n");
         }
         break;
 
@@ -1152,14 +1152,14 @@ int hdmi_check_output_mode(int v4l2_output_type)
         video.mode = HDMI;
         if (!EDIDHDMIModeSupport(&video)) {
             calbirate_v4l2_mode = V4L2_OUTPUT_TYPE_DVI;
-            LOGI("Change mode into DVI\n");
+            ALOGI("Change mode into DVI\n");
             break;
         }
 
         video.colorSpace = HDMI_CS_RGB;
         if (!EDIDColorSpaceSupport(&video)) {
             calbirate_v4l2_mode = V4L2_OUTPUT_TYPE_DIGITAL;
-            LOGI("Change mode into HDMI_YCBCR\n");
+            ALOGI("Change mode into HDMI_YCBCR\n");
         }
         break;
 
@@ -1169,10 +1169,10 @@ int hdmi_check_output_mode(int v4l2_output_type)
             video.colorSpace = HDMI_CS_YCBCR444;
             if (!EDIDColorSpaceSupport(&video)) {
                 calbirate_v4l2_mode = V4L2_OUTPUT_TYPE_HDMI_RGB;
-                LOGI("Change mode into HDMI_RGB\n");
+                ALOGI("Change mode into HDMI_RGB\n");
             } else {
                 calbirate_v4l2_mode = V4L2_OUTPUT_TYPE_DIGITAL;
-                LOGI("Change mode into HDMI_YCBCR\n");
+                ALOGI("Change mode into HDMI_YCBCR\n");
             }
             break;
         }
@@ -1276,7 +1276,7 @@ int hdmi_check_resolution(v4l2_std_id std_id)
         video.hdmi_3d_format = HDMI_3D_TB_FORMAT;
         break;
     default:
-        LOGE("%s::unmathced std_id(%lld)", __func__, std_id);
+        ALOGE("%s::unmathced std_id(%lld)", __func__, std_id);
         return -1;
         break;
     }
@@ -1351,7 +1351,7 @@ int hdmi_resolution_2_std_id(unsigned int resolution, unsigned int s3dMode, int 
             *h     = 480;
             break;
         default:
-            LOGE("%s::unmathced resolution(%d)", __func__, resolution);
+            ALOGE("%s::unmathced resolution(%d)", __func__, resolution);
             ret = -1;
             break;
         }
@@ -1368,7 +1368,7 @@ int hdmi_resolution_2_std_id(unsigned int resolution, unsigned int s3dMode, int 
             *h      = 720;
             break;
         default:
-            LOGE("%s::unmathced S3D TB resolution(%d)", __func__, resolution);
+            ALOGE("%s::unmathced S3D TB resolution(%d)", __func__, resolution);
             ret = -1;
             break;
         }
@@ -1380,7 +1380,7 @@ int hdmi_resolution_2_std_id(unsigned int resolution, unsigned int s3dMode, int 
             *h      = 720;
             break;
         default:
-            LOGE("%s::unmathced S3D SBS resolution(%d)", __func__, resolution);
+            ALOGE("%s::unmathced S3D SBS resolution(%d)", __func__, resolution);
             ret = -1;
             break;
         }
@@ -1392,7 +1392,7 @@ int hdmi_resolution_2_std_id(unsigned int resolution, unsigned int s3dMode, int 
 int hdmi_enable_hdcp(unsigned int hdcp_en)
 {
     if (ioctl(fp_tvout, VIDIOC_HDCP_ENABLE, hdcp_en) < 0) {
-        LOGD("%s::VIDIOC_HDCP_ENABLE(%d) fail \n", __func__, hdcp_en);
+        ALOGD("%s::VIDIOC_HDCP_ENABLE(%d) fail \n", __func__, hdcp_en);
         return -1;
     }
 
@@ -1418,12 +1418,12 @@ int hdmi_check_audio(void)
 #endif
     if (audio_state == ON) {
         if (ioctl(fp_tvout, VIDIOC_INIT_AUDIO, 1) < 0) {
-            LOGE("%s::VIDIOC_INIT_AUDIO(1) fail", __func__);
+            ALOGE("%s::VIDIOC_INIT_AUDIO(1) fail", __func__);
             ret = -1;
         }
     } else {
         if (ioctl(fp_tvout, VIDIOC_INIT_AUDIO, 0) < 0) {
-            LOGE("%s::VIDIOC_INIT_AUDIO(0) fail", __func__);
+            ALOGE("%s::VIDIOC_INIT_AUDIO(0) fail", __func__);
             ret = -1;
         }
     }

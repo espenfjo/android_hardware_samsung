@@ -75,7 +75,7 @@ hwc_module_t HAL_MODULE_INFO_SYM = {
 /*****************************************************************************/
 
 static void dump_layer(hwc_layer_t const* l) {
-    LOGD("\ttype=%d, flags=%08x, handle=%p, tr=%02x, blend=%04x, "
+    SEC_HWC_Log(HWC_LOG_DEBUG,"\ttype=%d, flags=%08x, handle=%p, tr=%02x, blend=%04x, "
             "{%d,%d,%d,%d}, {%d,%d,%d,%d}",
             l->compositionType, l->flags, l->handle, l->transform, l->blending,
             l->sourceCrop.left,
@@ -571,7 +571,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
         private_handle_t *prev_handle = NULL;
         if (cur->handle) {
             prev_handle = (private_handle_t *)(cur->handle);
-            LOGD("prev_handle->usage = %d", prev_handle->usage);
+            SEC_HWC_Log(HWC_LOG_DEBUG, "prev_handle->usage = %d", prev_handle->usage);
             if (prev_handle->usage & GRALLOC_USAGE_EXTERNAL_DISP) {
                 ctx->num_of_ext_disp_layer++;
                 if ((prev_handle->usage & GRALLOC_USAGE_EXTERNAL_DISP) ||
@@ -595,7 +595,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
             } else {
                 ret = assign_overlay_window(ctx, cur, overlay_win_cnt, i);
                 if (ret != 0) {
-                    LOGE("assign_overlay_window fail, change to frambuffer");
+                    SEC_HWC_Log(HWC_LOG_ERROR, "assign_overlay_window fail, change to frambuffer");
                     cur->compositionType = HWC_FRAMEBUFFER;
                     ctx->num_of_fb_layer++;
                     continue;
@@ -611,7 +611,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
             ctx->num_of_fb_layer++;
         }
 #if defined(BOARD_USES_HDMI)
-        LOGD("ext disp vid = %d, cable status = %d, composition type = %d", 
+        SEC_HWC_Log(HWC_LOG_DEBUG, "ext disp vid = %d, cable status = %d, composition type = %d", 
                 ctx->num_of_ext_disp_video_layer, ctx->hdmi_cable_status, compositionType);
         if (ctx->num_of_ext_disp_video_layer >= 2) {
             if ((ctx->hdmi_cable_status) &&
@@ -874,7 +874,7 @@ static int hwc_set(hwc_composer_device_t *dev,
                                     android::SecHdmiClient::HDMI_MODE_VIDEO,
                                     ctx->num_of_hwc_layer);
         } else {
-            LOGE("%s: Unsupported format = %d", __func__, src_img.format);
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s: Unsupported format = %d", __func__, src_img.format);
         }
     }
 #endif

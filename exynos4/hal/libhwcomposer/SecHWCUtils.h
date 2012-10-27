@@ -35,9 +35,9 @@
 #include <cutils/log.h>
 
 #include <linux/videodev.h>
+#include "videodev2.h"
 #include "s5p_fimc.h"
 #include "sec_utils.h"
-
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <hardware/gralloc.h>
@@ -47,7 +47,7 @@
 #include "s3c_lcd.h"
 #include "sec_format.h"
 
-//#define HWC_DEBUG
+#define HWC_DEBUG
 #if defined(BOARD_USES_FIMGAPI)
 #include "sec_g2d.h"
 #endif

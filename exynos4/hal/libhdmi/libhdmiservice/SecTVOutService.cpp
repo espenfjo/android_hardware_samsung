@@ -22,7 +22,7 @@
 ** @date    2011-07-06
 */
 
-#define LOG_TAG "SecTVOutService"
+#define ALOG_TAG "SecTVOutService"
 
 #include <binder/IServiceManager.h>
 #include <utils/RefBase.h>
@@ -64,15 +64,15 @@ namespace android {
 
     int SecTVOutService::instantiate()
     {
-        LOGD("SecTVOutService instantiate");
+        ALOGD("SecTVOutService instantiate");
         int r = defaultServiceManager()->addService(String16( "SecTVOutService"), new SecTVOutService ());
-        LOGD("SecTVOutService r=%d", r);
+        ALOGD("SecTVOutService r=%d", r);
 
         return r;
     }
 
     SecTVOutService::SecTVOutService () {
-        LOGV("SecTVOutService created");
+        ALOGV("SecTVOutService created");
         mHdmiCableInserted = false;
 #ifdef SUPPORT_G2D_UI_MODE
         mUILayerMode = SecHdmi::HDMI_LAYER_GRAPHIC_1;
@@ -84,7 +84,7 @@ namespace android {
 
         setLCDsize();
         if (mSecHdmi.create(mLCD_width, mLCD_height) == false)
-            LOGE("%s::mSecHdmi.create() fail", __func__);
+            ALOGE("%s::mSecHdmi.create() fail", __func__);
         else
             setHdmiStatus(1);
 
@@ -121,7 +121,7 @@ namespace android {
     }
 
     SecTVOutService::~SecTVOutService () {
-        LOGV ("SecTVOutService destroyed");
+        ALOGV ("SecTVOutService destroyed");
 
         if (mHdmiFlushThread != NULL) {
             mHdmiFlushThread->requestExit();
@@ -196,7 +196,7 @@ namespace android {
         } break;
 
         default :
-            LOGE ( "onTransact::default");
+            ALOGE ( "onTransact::default");
             return BBinder::onTransact (code, data, reply, flags);
         }
 
@@ -206,7 +206,7 @@ namespace android {
     void SecTVOutService::setHdmiStatus(uint32_t status)
     {
 
-        LOGD("%s HDMI cable status = %d", __func__, status);
+        ALOGD("%s HDMI cable status = %d", __func__, status);
         {
             Mutex::Autolock _l(mLock);
 
@@ -217,12 +217,12 @@ namespace android {
 
             if (hdmiCableInserted == true) {
                 if (mSecHdmi.connect() == false) {
-                    LOGE("%s::mSecHdmi.connect() fail", __func__);
+                    ALOGE("%s::mSecHdmi.connect() fail", __func__);
                     hdmiCableInserted = false;
                 }
             } else {
                 if (mSecHdmi.disconnect() == false)
-                    LOGE("%s::mSecHdmi.disconnect() fail", __func__);
+                    ALOGE("%s::mSecHdmi.disconnect() fail", __func__);
             }
 
             mHdmiCableInserted = hdmiCableInserted;
@@ -240,33 +240,33 @@ namespace android {
 
     void SecTVOutService::setHdmiMode(uint32_t mode)
     {
-        LOGD("%s TV mode = %d", __func__, mode);
+        ALOGD("%s TV mode = %d", __func__, mode);
         Mutex::Autolock _l(mLock);
 
         if ((hdmiCableInserted() == true) && (mSecHdmi.setHdmiOutputMode(mode)) == false) {
-            LOGE("%s::mSecHdmi.setHdmiOutputMode() fail", __func__);
+            ALOGE("%s::mSecHdmi.setHdmiOutputMode() fail", __func__);
             return;
         }
     }
 
     void SecTVOutService::setHdmiResolution(uint32_t resolution, HDMI_S3D_MODE s3dMode)
     {
-        //LOGD("%s TV resolution = %d", __func__, resolution);
+        //ALOGD("%s TV resolution = %d", __func__, resolution);
         Mutex::Autolock _l(mLock);
 
         if ((hdmiCableInserted() == true) && (mSecHdmi.setHdmiResolution(resolution, s3dMode)) == false) {
-            LOGE("%s::mSecHdmi.setHdmiResolution() fail", __func__);
+            ALOGE("%s::mSecHdmi.setHdmiResolution() fail", __func__);
             return;
         }
     }
 
     void SecTVOutService::setHdmiHdcp(uint32_t hdcp_en)
     {
-        LOGD("%d: %s TV HDCP = %d", gettid(), __func__, hdcp_en);
+        ALOGD("%d: %s TV HDCP = %d", gettid(), __func__, hdcp_en);
         Mutex::Autolock _l(mLock);
 
         if ((hdmiCableInserted() == true) && (mSecHdmi.setHdcpMode(hdcp_en)) == false) {
-            LOGE("%s::mSecHdmi.setHdcpMode() fail", __func__);
+            ALOGE("%s::mSecHdmi.setHdcpMode() fail", __func__);
             return;
         }
     }
@@ -279,18 +279,18 @@ namespace android {
 
     void SecTVOutService::setHdmiRotate(uint32_t rotVal, uint32_t hwcLayer)
     {
-        //LOGD("%d: %s TV ROTATE = %d", gettid(), __func__, rotVal);
+        //ALOGD("%d: %s TV ROTATE = %d", gettid(), __func__, rotVal);
         Mutex::Autolock _l(mLock);
 
         if ((hdmiCableInserted() == true) && (mSecHdmi.setUIRotation(rotVal, hwcLayer)) == false) {
-            LOGE("%s::mSecHdmi.setUIRotation() fail", __func__);
+            ALOGE("%s::mSecHdmi.setUIRotation() fail", __func__);
             return;
         }
     }
 
     void SecTVOutService::setHdmiHwcLayer(uint32_t hwcLayer)
     {
-        //LOGD("%s TV HWCLAYER = %d", __func__, hwcLayer);
+        //ALOGD("%s TV HWCLAYER = %d", __func__, hwcLayer);
         Mutex::Autolock _l(mLock);
 
         mHwcLayer = hwcLayer;
@@ -355,15 +355,15 @@ namespace android {
 #ifdef SUPPORT_G2D_UI_MODE
             if (mHwcLayer == 0) {
                 if (mSecHdmi.clear(SecHdmi::HDMI_LAYER_VIDEO) == false)
-                    LOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_VIDEO);
+                    ALOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_VIDEO);
                 if (mSecHdmi.clear(SecHdmi::HDMI_LAYER_GRAPHIC_0) == false)
-                    LOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_GRAPHIC_0);
+                    ALOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_GRAPHIC_0);
             }
 #endif
 
             if (mUILayerMode != hdmiLayer) {
                 if (mSecHdmi.clear(mUILayerMode) == false)
-                    LOGE("%s::mSecHdmi.clear(%d) fail", __func__, mUILayerMode);
+                    ALOGE("%s::mSecHdmi.clear(%d) fail", __func__, mUILayerMode);
             }
 
             mUILayerMode = hdmiLayer;
@@ -378,10 +378,10 @@ namespace android {
 #endif
                 if (mSecHdmi.flush(w, h, colorFormat, pPhyYAddr, pPhyCbAddr, pPhyCrAddr, dstX, dstY,
                                     mUILayerMode, mHwcLayer) == false)
-                    LOGE("%s::mSecHdmi.flush() on HDMI_MODE_UI fail", __func__);
+                    ALOGE("%s::mSecHdmi.flush() on HDMI_MODE_UI fail", __func__);
 #ifdef CHECK_UI_TIME
                 end = systemTime();
-                LOGD("[UI] mSecHdmi.flush[end-start] = %ld ms", long(ns2ms(end)) - long(ns2ms(start)));
+                ALOGD("[UI] mSecHdmi.flush[end-start] = %ld ms", long(ns2ms(end)) - long(ns2ms(start)));
 #endif
             }
 #else
@@ -399,9 +399,9 @@ namespace android {
 #if !defined(BOARD_USES_HDMI_SUBTITLES)
 #ifdef SUPPORT_G2D_UI_MODE
             if (mSecHdmi.clear(SecHdmi::HDMI_LAYER_GRAPHIC_0) == false)
-                LOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_GRAPHIC_0);
+                ALOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_GRAPHIC_0);
             if (mSecHdmi.clear(SecHdmi::HDMI_LAYER_GRAPHIC_1) == false)
-                LOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_GRAPHIC_1);
+                ALOGE("%s::mSecHdmi.clear(%d) fail", __func__, SecHdmi::HDMI_LAYER_GRAPHIC_1);
 #endif
 #endif
 
@@ -411,10 +411,10 @@ namespace android {
 #endif
             if (mSecHdmi.flush(w, h, colorFormat, pPhyYAddr, pPhyCbAddr, pPhyCrAddr, dstX, dstY,
                                 SecHdmi::HDMI_LAYER_VIDEO, mHwcLayer) == false)
-                LOGE("%s::mSecHdmi.flush() on HDMI_MODE_VIDEO fail", __func__);
+                ALOGE("%s::mSecHdmi.flush() on HDMI_MODE_VIDEO fail", __func__);
 #ifdef CHECK_VIDEO_TIME
             end = systemTime();
-            LOGD("[Video] mSecHdmi.flush[end-start] = %ld ms", long(ns2ms(end)) - long(ns2ms(start)));
+            ALOGD("[Video] mSecHdmi.flush[end-start] = %ld ms", long(ns2ms(end)) - long(ns2ms(start)));
 #endif
 #else
             msg = new SecHdmiEventMsg(&mSecHdmi, w, h, colorFormat, pPhyYAddr, pPhyCbAddr, pPhyCrAddr,
@@ -426,7 +426,7 @@ namespace android {
             break;
 
         default:
-            LOGE("unmatched HDMI_MODE : %d", hdmiMode);
+            ALOGE("unmatched HDMI_MODE : %d", hdmiMode);
             break;
         }
 

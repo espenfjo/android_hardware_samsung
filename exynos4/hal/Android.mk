@@ -1,4 +1,5 @@
-# Copyright (C) 2008 The Android Open Source Project
+#
+# Copyright (C) 2012 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +12,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-ifeq ($(filter-out exynos4,$(TARGET_BOARD_PLATFORM)),)
-include $(all-subdir-makefiles)
+ifeq ($(TARGET_BOARD_PLATFORM),exynos4)
+
+common_exynos4_dirs := libgralloc_ump libhdmi libhwcomposer libhwconverter
+
+ifneq ($(BOARD_USES_PROPRIETARY_LIBCAMERA),true)
+common_exynos4_dirs += libcamera
+endif
+
+ifneq ($(BOARD_USES_PROPRIETARY_LIBFIMC),true)
+common_exynos4_dirs += libfimc
+endif
+
+exynos4210_dirs := $(common_exynos4_dirs) libs5pjpeg libfimg3x
+exynos4x12_dirs := $(common_exynos4_dirs) libhwjpeg libfimg4x
+
+ifeq ($(TARGET_SOC),exynos4210)
+  include $(call all-named-subdir-makefiles,$(exynos4210_dirs))
+else
+  include $(call all-named-subdir-makefiles,$(exynos4x12_dirs))
+endif
 endif

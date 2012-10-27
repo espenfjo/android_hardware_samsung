@@ -18,15 +18,15 @@
 **
 */
 
-//#define LOG_NDEBUG 0
+#define LOG_NDEBUG 1
 //#define LOG_TAG "libhdmi"
 #include <cutils/log.h>
 
 #include "videodev2.h"
 #include "s5p_tvout.h"
 
-//#define LOG_LIB_HDMI
-//#define DEBUG_LIB_HDMI_V4L2
+#define DEBUG_LIB_HDMI
+#define DEBUG_LIB_HDMI_V4L2
 #define BOARD_USES_EDID
 //#define BOARD_USES_CEC
 #if defined(SAMSUNG_EXYNOS4x12)
@@ -34,13 +34,13 @@
 #endif
 
 #if defined(DEBUG_LIB_HDMI)
-#define LOG_LIB_HDMI LOGD
+#define LOG_LIB_HDMI ALOGD
 #else
 #define LOG_LIB_HDMI(...)
 #endif
 
 #if defined(DEBUG_LIB_HDMI_V4L2)
-#define LOG_LIB_HDMI_V4L2 LOGD
+#define LOG_LIB_HDMI_V4L2 ALOGD
 #else
 #define LOG_LIB_HDMI_V4L2(...)
 #endif

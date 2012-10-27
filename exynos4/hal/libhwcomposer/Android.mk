@@ -24,7 +24,7 @@ LOCAL_SHARED_LIBRARIES := liblog libcutils libEGL \
 			  libGLESv1_CM
 
 LOCAL_C_INCLUDES := \
-	$(LOCAL_PATH)/../include
+	$(TARGET_HAL_PATH)/include
 
 LOCAL_SRC_FILES := SecHWCLog.cpp SecHWCUtils.cpp SecHWC.cpp
 
@@ -40,9 +40,9 @@ endif
 
 ifeq ($(BOARD_USES_HDMI),true)
 LOCAL_C_INCLUDES += \
-	$(LOCAL_PATH)/../include \
-	$(LOCAL_PATH)/../libhwcomposer \
-	$(LOCAL_PATH)/../libhdmi/libhdmiservice
+	$(TARGET_HAL_PATH)/libhwcomposer \
+	$(TARGET_HAL_PATH)/include \
+	$(TARGET_HAL_PATH)/libhdmi/libhdmiservice
 
 LOCAL_SHARED_LIBRARIES 	+= libhdmiclient libTVOut
 

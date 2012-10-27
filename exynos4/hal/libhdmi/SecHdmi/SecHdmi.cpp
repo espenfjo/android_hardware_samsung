@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-//#define LOG_NDEBUG 0
-//#define LOG_TAG "libhdmi"
+#define LOG_TAG "libhdmi"
 #include <cutils/log.h>
 
 #include "SecHdmi.h"
@@ -77,18 +76,18 @@ bool SecHdmi::CECThread::threadLoop()
         opcode = buffer[1];
 
         if (CECIgnoreMessage(opcode, lsrc)) {
-            LOGE("### ignore message coming from address 15 (unregistered)\n");
+            ALOGE("### ignore message coming from address 15 (unregistered)\n");
             return true;
         }
 
         if (!CECCheckMessageSize(opcode, size)) {
-            LOGE("### invalid message size: %d(opcode: 0x%x) ###\n", size, opcode);
+            ALOGE("### invalid message size: %d(opcode: 0x%x) ###\n", size, opcode);
             return true;
         }
 
         /* check if message broadcasted/directly addressed */
         if (!CECCheckMessageMode(opcode, (buffer[0] & 0x0F) == CEC_MSG_BROADCAST ? 1 : 0)) {
-            LOGE("### invalid message mode (directly addressed/broadcast) ###\n");
+            ALOGE("### invalid message mode (directly addressed/broadcast) ###\n");
             return true;
         }
 
@@ -109,14 +108,14 @@ bool SecHdmi::CECThread::threadLoop()
             break;
 
         case CEC_OPCODE_REQUEST_ACTIVE_SOURCE:
-            LOGD("[CEC_OPCODE_REQUEST_ACTIVE_SOURCE]\n");
+            ALOGD("[CEC_OPCODE_REQUEST_ACTIVE_SOURCE]\n");
             /* responce with "Active Source" */
             buffer[0] = (mLaddr << 4) | CEC_MSG_BROADCAST;
             buffer[1] = CEC_OPCODE_ACTIVE_SOURCE;
             buffer[2] = (mPaddr >> 8) & 0xFF;
             buffer[3] = mPaddr & 0xFF;
             size = 4;
-            LOGD("Tx : [CEC_OPCODE_ACTIVE_SOURCE]\n");
+            ALOGD("Tx : [CEC_OPCODE_ACTIVE_SOURCE]\n");
             break;
 
         case CEC_OPCODE_ABORT:
@@ -132,7 +131,7 @@ bool SecHdmi::CECThread::threadLoop()
         }
 
         if (CECSendMessage(buffer, size) != size)
-            LOGE("CECSendMessage() failed!!!\n");
+            ALOGE("CECSendMessage() failed!!!\n");
 
     }
     return true;
@@ -145,7 +144,7 @@ bool SecHdmi::CECThread::start()
     Mutex::Autolock lock(mThreadControlLock);
     if (exitPending()) {
         if (requestExitAndWait() == WOULD_BLOCK) {
-            LOGE("mCECThread.requestExitAndWait() == WOULD_BLOCK");
+            ALOGE("mCECThread.requestExitAndWait() == WOULD_BLOCK");
             return false;
         }
     }
@@ -156,14 +155,14 @@ bool SecHdmi::CECThread::start()
     mPaddr = CEC_NOT_VALID_PHYSICAL_ADDRESS;
 
     if (!EDIDGetCECPhysicalAddress(&mPaddr)) {
-        LOGE("Error: EDIDGetCECPhysicalAddress() failed.\n");
+        ALOGE("Error: EDIDGetCECPhysicalAddress() failed.\n");
         return false;
     }
 
     LOG_LIB_HDMI("CECOpen");
 
     if (!CECOpen()) {
-        LOGE("CECOpen() failed!!!\n");
+        ALOGE("CECOpen() failed!!!\n");
         return false;
     }
 
@@ -181,9 +180,9 @@ bool SecHdmi::CECThread::start()
     mLaddr = CECAllocLogicalAddress(mPaddr, mDevtype);
 
     if (!mLaddr) {
-        LOGE("CECAllocLogicalAddress() failed!!!\n");
+        ALOGE("CECAllocLogicalAddress() failed!!!\n");
         if (!CECClose())
-            LOGE("CECClose() failed!\n");
+            ALOGE("CECClose() failed!\n");
         return false;
     }
 
@@ -191,7 +190,7 @@ bool SecHdmi::CECThread::start()
 
     status_t ret = run("SecHdmi::CECThread", PRIORITY_DISPLAY);
     if (ret != NO_ERROR) {
-        LOGE("%s fail to run thread", __func__);
+        ALOGE("%s fail to run thread", __func__);
         return false;
     }
     return true;
@@ -203,12 +202,12 @@ bool SecHdmi::CECThread::stop()
 
     Mutex::Autolock lock(mThreadControlLock);
     if (requestExitAndWait() == WOULD_BLOCK) {
-        LOGE("mCECThread.requestExitAndWait() == WOULD_BLOCK");
+        ALOGE("mCECThread.requestExitAndWait() == WOULD_BLOCK");
         return false;
     }
 
     if (!CECClose())
-        LOGE("CECClose() failed!\n");
+        ALOGE("CECClose() failed!\n");
 
     mFlagRunning = false;
     return true;
@@ -307,7 +306,7 @@ SecHdmi::~SecHdmi()
     LOG_LIB_HDMI("%s", __func__);
 
     if (mFlagCreate == true)
-        LOGE("%s::this is not Destroyed fail", __func__);
+        ALOGE("%s::this is not Destroyed fail", __func__);
     else
         disconnect();
 }
@@ -344,13 +343,13 @@ bool SecHdmi::create(int width, int height)
     LOG_LIB_HDMI("%s", __func__);
 
     if (mFlagCreate == true) {
-        LOGE("%s::Already Created fail", __func__);
+        ALOGE("%s::Already Created fail", __func__);
         goto CREATE_FAIL;
     }
 
     if (mDefaultFBFd <= 0) {
         if ((mDefaultFBFd = fb_open(DEFAULT_FB)) < 0) {
-            LOGE("%s:Failed to open default FB", __func__);
+            ALOGE("%s:Failed to open default FB", __func__);
             return false;
         }
     }
@@ -358,7 +357,7 @@ bool SecHdmi::create(int width, int height)
     BufNum = 1;
 
     if (mSecFimc.create(SecFimc::DEV_3, SecFimc::MODE_SINGLE_BUF, BufNum) == false) {
-        LOGE("%s::SecFimc create() fail", __func__);
+        ALOGE("%s::SecFimc create() fail", __func__);
         goto CREATE_FAIL;
     }
 
@@ -382,17 +381,17 @@ bool SecHdmi::create(int width, int height)
     if (mHdmiOutputMode == COMPOSITE_OUTPUT_MODE) {
         std_id = composite_std_2_v4l2_std_id(mCompositeStd);
         if ((int)std_id < 0) {
-            LOGE("%s::composite_std_2_v4l2_std_id(%d) fail\n", __func__, mCompositeStd);
+            ALOGE("%s::composite_std_2_v4l2_std_id(%d) fail\n", __func__, mCompositeStd);
             goto CREATE_FAIL;
         }
         if (m_setCompositeResolution(mCompositeStd) == false) {
-            LOGE("%s::m_setCompositeResolution(%d) fail\n", __func__, mCompositeStd);
+            ALOGE("%s::m_setCompositeResolution(%d) fail\n", __func__, mCompositeStd);
             goto CREATE_FAIL;
         }
     } else if (mHdmiOutputMode >= HDMI_OUTPUT_MODE_YCBCR &&
             mHdmiOutputMode <= HDMI_OUTPUT_MODE_DVI) {
         if (hdmi_resolution_2_std_id(mHdmiResolutionValue, mHdmiS3DMode, &mHdmiDstWidth, &mHdmiDstHeight, &std_id) < 0) {
-            LOGE("%s::hdmi_resolution_2_std_id(%d) fail\n", __func__, mHdmiResolutionValue);
+            ALOGE("%s::hdmi_resolution_2_std_id(%d) fail\n", __func__, mHdmiResolutionValue);
             goto CREATE_FAIL;
         }
     }
@@ -405,7 +404,7 @@ CREATE_FAIL :
 
     if (mSecFimc.flagCreate() == true &&
        mSecFimc.destroy()    == false)
-        LOGE("%s::fimc destory fail", __func__);
+        ALOGE("%s::fimc destory fail", __func__);
 
     return false;
 }
@@ -417,18 +416,18 @@ bool SecHdmi::destroy(void)
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Already Destroyed fail \n", __func__);
+        ALOGE("%s::Already Destroyed fail \n", __func__);
         goto DESTROY_FAIL;
     }
 
     for (int layer = HDMI_LAYER_BASE + 1; layer <= HDMI_LAYER_GRAPHIC_0; layer++) {
         if (mFlagHdmiStart[layer] == true && m_stopHdmi(layer) == false) {
-            LOGE("%s::m_stopHdmi: layer[%d] fail \n", __func__, layer);
+            ALOGE("%s::m_stopHdmi: layer[%d] fail \n", __func__, layer);
             goto DESTROY_FAIL;
         }
 
         if (hdmi_deinit_layer(layer) < 0) {
-            LOGE("%s::hdmi_deinit_layer(%d) fail \n", __func__, layer);
+            ALOGE("%s::hdmi_deinit_layer(%d) fail \n", __func__, layer);
             goto DESTROY_FAIL;
         }
     }
@@ -436,7 +435,7 @@ bool SecHdmi::destroy(void)
     tvout_deinit();
 
     if (mSecFimc.flagCreate() == true && mSecFimc.destroy() == false) {
-        LOGE("%s::fimc destory fail \n", __func__);
+        ALOGE("%s::fimc destory fail \n", __func__);
         goto DESTROY_FAIL;
     }
 
@@ -466,30 +465,30 @@ bool SecHdmi::connect(void)
         Mutex::Autolock lock(mLock);
 
         if (mFlagCreate == false) {
-            LOGE("%s::Not Yet Created \n", __func__);
+            ALOGE("%s::Not Yet Created \n", __func__);
             return false;
         }
 
         if (mFlagConnected == true) {
-            LOGD("%s::Already Connected.. \n", __func__);
+            ALOGD("%s::Already Connected.. \n", __func__);
             return true;
         }
 
         if (mHdmiOutputMode >= HDMI_OUTPUT_MODE_YCBCR &&
                 mHdmiOutputMode <= HDMI_OUTPUT_MODE_DVI) {
             if (m_flagHWConnected() == false) {
-                LOGD("%s::m_flagHWConnected() fail \n", __func__);
+                ALOGD("%s::m_flagHWConnected() fail \n", __func__);
                 return false;
             }
 
 #if defined(BOARD_USES_EDID)
             if (!EDIDOpen())
-                LOGE("EDIDInit() failed!\n");
+                ALOGE("EDIDInit() failed!\n");
 
             if (!EDIDRead()) {
-                LOGE("EDIDRead() failed!\n");
+                ALOGE("EDIDRead() failed!\n");
                 if (!EDIDClose())
-                    LOGE("EDIDClose() failed!\n");
+                    ALOGE("EDIDClose() failed!\n");
             }
 #endif
 
@@ -501,15 +500,15 @@ bool SecHdmi::connect(void)
     }
 
     if (this->setHdmiOutputMode(mHdmiOutputMode, true) == false)
-        LOGE("%s::setHdmiOutputMode(%d) fail \n", __func__, mHdmiOutputMode);
+        ALOGE("%s::setHdmiOutputMode(%d) fail \n", __func__, mHdmiOutputMode);
 
     if (mHdmiOutputMode >= HDMI_OUTPUT_MODE_YCBCR &&
             mHdmiOutputMode <= HDMI_OUTPUT_MODE_DVI) {
         if (this->setHdmiResolution(mHdmiResolutionValue, HDMI_2D, true) == false)
-            LOGE("%s::setHdmiResolution(%d), mHdmiS3DMode(%d) fail \n", __func__, mHdmiResolutionValue, mHdmiS3DMode);
+            ALOGE("%s::setHdmiResolution(%d), mHdmiS3DMode(%d) fail \n", __func__, mHdmiResolutionValue, mHdmiS3DMode);
 
         if (this->setHdcpMode(mHdcpMode, false) == false)
-            LOGE("%s::setHdcpMode(%d) fail \n", __func__, mHdcpMode);
+            ALOGE("%s::setHdcpMode(%d) fail \n", __func__, mHdcpMode);
 
         mHdmiInfoChange = true;
         mFlagConnected = true;
@@ -530,12 +529,12 @@ bool SecHdmi::disconnect(void)
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
 
     if (mFlagConnected == false) {
-        LOGE("%s::Already Disconnected.. \n", __func__);
+        ALOGE("%s::Already Disconnected.. \n", __func__);
         return true;
     }
 
@@ -548,7 +547,7 @@ bool SecHdmi::disconnect(void)
 
 #if defined(BOARD_USES_EDID)
         if (!EDIDClose()) {
-            LOGE("EDIDClose() failed!\n");
+            ALOGE("EDIDClose() failed!\n");
             return false;
         }
 #endif
@@ -556,7 +555,7 @@ bool SecHdmi::disconnect(void)
 
     for (int layer = SecHdmi::HDMI_LAYER_BASE + 1; layer <= SecHdmi::HDMI_LAYER_GRAPHIC_0; layer++) {
         if (mFlagHdmiStart[layer] == true && m_stopHdmi(layer) == false) {
-            LOGE("%s::hdmiLayer(%d) layer fail \n", __func__, layer);
+            ALOGE("%s::hdmiLayer(%d) layer fail \n", __func__, layer);
             return false;
         }
     }
@@ -586,7 +585,7 @@ bool SecHdmi::flagConnected(void)
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
 
@@ -605,7 +604,7 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
 
@@ -622,7 +621,7 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
             hdmiLayer);
 
         if (m_reset(srcW, srcH, srcColorFormat, hdmiLayer, num_of_hwc_layer) == false) {
-            LOGE("%s::m_reset(%d, %d, %d, %d, %d) fail", __func__, srcW, srcH, srcColorFormat, hdmiLayer, num_of_hwc_layer);
+            ALOGE("%s::m_reset(%d, %d, %d, %d, %d) fail", __func__, srcW, srcH, srcColorFormat, hdmiLayer, num_of_hwc_layer);
             return false;
         }
     }
@@ -632,7 +631,7 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
 
         // get physical framebuffer address for LCD
         if (ioctl(mDefaultFBFd, S3CFB_GET_FB_PHY_ADDR, &phyFBAddr) == -1) {
-            LOGE("%s:ioctl(S3CFB_GET_FB_PHY__ADDR) fail", __func__);
+            ALOGE("%s:ioctl(S3CFB_GET_FB_PHY__ADDR) fail", __func__);
             return false;
         }
 
@@ -642,7 +641,7 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
          * so JUST RETURN.
          */
         if (phyFBAddr == 0) {
-            LOGE("%s::S3CFB_GET_FB_PHY_ADDR fail", __func__);
+            ALOGE("%s::S3CFB_GET_FB_PHY_ADDR fail", __func__);
             return true;
         }
         srcYAddr = phyFBAddr;
@@ -669,7 +668,7 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
                     mHdmiDstWidth, mHdmiDstHeight);
         } else {
             if (mSecFimc.setSrcAddr(srcYAddr, srcCbAddr, srcCrAddr, srcColorFormat) == false) {
-                LOGE("%s::setSrcAddr(%d, %d, %d) fail",
+                ALOGE("%s::setSrcAddr(%d, %d, %d) fail",
                         __func__, srcYAddr, srcCbAddr, srcCrAddr);
                 return false;
             }
@@ -683,13 +682,13 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
             mHdmiSrcYAddr    = mFimcReservedMem[mFimcCurrentOutBufIndex].phys.extP[0];
             mHdmiSrcCbCrAddr = mFimcReservedMem[mFimcCurrentOutBufIndex].phys.extP[0] + y_size;
             if (mSecFimc.setDstAddr(mHdmiSrcYAddr, mHdmiSrcCbCrAddr, 0, mFimcCurrentOutBufIndex) == false) {
-                LOGE("%s::mSecFimc.setDstAddr(%d, %d) fail \n",
+                ALOGE("%s::mSecFimc.setDstAddr(%d, %d) fail \n",
                         __func__, mHdmiSrcYAddr, mHdmiSrcCbCrAddr);
                 return false;
             }
 
             if (mSecFimc.draw(0, mFimcCurrentOutBufIndex) == false) {
-                LOGE("%s::mSecFimc.draw() fail \n", __func__);
+                ALOGE("%s::mSecFimc.draw() fail \n", __func__);
                 return false;
             }
             if (mUIRotVal == 0 || mUIRotVal == 180)
@@ -712,13 +711,13 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
             srcColorFormat != HAL_PIXEL_FORMAT_RGBA_8888 &&
             srcColorFormat != HAL_PIXEL_FORMAT_RGB_565) {
             if (mSecFimc.setSrcAddr(srcYAddr, srcCbAddr, srcCrAddr, srcColorFormat) == false) {
-                LOGE("%s::setSrcAddr(%d, %d, %d) fail",
+                ALOGE("%s::setSrcAddr(%d, %d, %d) fail",
                      __func__, srcYAddr, srcCbAddr, srcCrAddr);
                 return false;
             }
 
             if (mSecFimc.draw(0, mFimcCurrentOutBufIndex) == false) {
-                LOGE("%s::mSecFimc.draw() failed", __func__);
+                ALOGE("%s::mSecFimc.draw() failed", __func__);
                 return false;
             }
             if (hdmi_gl_set_param(hdmiLayer,
@@ -764,14 +763,14 @@ bool SecHdmi::flush(int srcW, int srcH, int srcColorFormat,
             }
 #if CHECK_GRAPHIC_LAYER_TIME
             end = systemTime();
-            LOGD("[UI] hdmi_gl_set_param[end-start] = %ld ms", long(ns2ms(end)) - long(ns2ms(start)));
+            ALOGD("[UI] hdmi_gl_set_param[end-start] = %ld ms", long(ns2ms(end)) - long(ns2ms(start)));
 #endif
         }
     }
 
     if (mFlagConnected) {
         if (mFlagHdmiStart[hdmiLayer] == false && m_startHdmi(hdmiLayer) == false) {
-            LOGE("%s::hdmiLayer(%d) fail", __func__, hdmiLayer);
+            ALOGE("%s::hdmiLayer(%d) fail", __func__, hdmiLayer);
             return false;
         }
     }
@@ -786,11 +785,11 @@ bool SecHdmi::clear(int hdmiLayer)
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
     if (mFlagHdmiStart[hdmiLayer] == true && m_stopHdmi(hdmiLayer) == false) {
-        LOGE("%s::m_stopHdmi: layer[%d] fail \n", __func__, hdmiLayer);
+        ALOGE("%s::m_stopHdmi: layer[%d] fail \n", __func__, hdmiLayer);
         return false;
     }
     return true;
@@ -803,7 +802,7 @@ bool SecHdmi::setHdmiOutputMode(int hdmiOutputMode, bool forceRun)
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
 
@@ -816,7 +815,7 @@ bool SecHdmi::setHdmiOutputMode(int hdmiOutputMode, bool forceRun)
 
     int v4l2OutputType = hdmi_outputmode_2_v4l2_output_type(hdmiOutputMode);
     if (v4l2OutputType < 0) {
-        LOGD("%s::hdmi_outputmode_2_v4l2_output_type(%d) fail\n", __func__, hdmiOutputMode);
+        ALOGD("%s::hdmi_outputmode_2_v4l2_output_type(%d) fail\n", __func__, hdmiOutputMode);
         return false;
     }
 
@@ -825,11 +824,11 @@ bool SecHdmi::setHdmiOutputMode(int hdmiOutputMode, bool forceRun)
     if (newV4l2OutputType != v4l2OutputType) {
         newHdmiOutputMode = hdmi_v4l2_output_type_2_outputmode(newV4l2OutputType);
         if (newHdmiOutputMode < 0) {
-            LOGD("%s::hdmi_v4l2_output_type_2_outputmode(%d) fail\n", __func__, newV4l2OutputType);
+            ALOGD("%s::hdmi_v4l2_output_type_2_outputmode(%d) fail\n", __func__, newV4l2OutputType);
             return false;
         }
 
-        LOGD("%s::calibration mode(%d -> %d)... \n", __func__, hdmiOutputMode, newHdmiOutputMode);
+        ALOGD("%s::calibration mode(%d -> %d)... \n", __func__, hdmiOutputMode, newHdmiOutputMode);
         mHdmiInfoChange = true;
     }
 #endif
@@ -849,7 +848,7 @@ bool SecHdmi::setHdmiResolution(unsigned int hdmiResolutionValue, unsigned int s
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
 
@@ -874,7 +873,7 @@ bool SecHdmi::setHdmiResolution(unsigned int hdmiResolutionValue, unsigned int s
         if(s3dMode == HDMI_S3D_TB) {
             resolutionValueIndex = m_resolutionValueIndex(DEFAULT_HDMI_S3D_TB_RESOLUTION_VALUE, newHdmiS3DMode);
             if (resolutionValueIndex < 0) {
-                LOGE("%s::Cannot find matched resolution(%d) index\n", __func__, DEFAULT_HDMI_S3D_TB_RESOLUTION_VALUE);
+                ALOGE("%s::Cannot find matched resolution(%d) index\n", __func__, DEFAULT_HDMI_S3D_TB_RESOLUTION_VALUE);
                 return false;
             }
             for (int i = resolutionValueIndex; i < HDMI_TB_RESOLUTION_NUM; i++) {
@@ -888,7 +887,7 @@ bool SecHdmi::setHdmiResolution(unsigned int hdmiResolutionValue, unsigned int s
         } else if (s3dMode == HDMI_S3D_SBS) {
             resolutionValueIndex = m_resolutionValueIndex(DEFAULT_HDMI_S3D_SBS_RESOLUTION_VALUE, newHdmiS3DMode);
             if (resolutionValueIndex < 0) {
-                LOGE("%s::Cannot find matched resolution(%d) index\n", __func__, DEFAULT_HDMI_S3D_SBS_RESOLUTION_VALUE);
+                ALOGE("%s::Cannot find matched resolution(%d) index\n", __func__, DEFAULT_HDMI_S3D_SBS_RESOLUTION_VALUE);
                 return false;
             }
             for (int i = resolutionValueIndex; i < HDMI_SBS_RESOLUTION_NUM; i++) {
@@ -905,7 +904,7 @@ bool SecHdmi::setHdmiResolution(unsigned int hdmiResolutionValue, unsigned int s
             newHdmiS3DMode = HDMI_2D;
             resolutionValueIndex = m_resolutionValueIndex(DEFAULT_HDMI_RESOLUTION_VALUE, newHdmiS3DMode);
             if (resolutionValueIndex < 0) {
-                LOGE("%s::Cannot find matched resolution(%d) index\n", __func__, DEFAULT_HDMI_RESOLUTION_VALUE);
+                ALOGE("%s::Cannot find matched resolution(%d) index\n", __func__, DEFAULT_HDMI_RESOLUTION_VALUE);
                 return false;
             }
             for (int i = resolutionValueIndex; i < HDMI_2D_RESOLUTION_NUM; i++) {
@@ -920,11 +919,11 @@ bool SecHdmi::setHdmiResolution(unsigned int hdmiResolutionValue, unsigned int s
 
         if (flagFoundIndex == false) {
             newHdmiS3DMode = HDMI_2D;
-            LOGE("%s::hdmi cannot control this resolution(%d) fail \n", __func__, hdmiResolutionValue);
+            ALOGE("%s::hdmi cannot control this resolution(%d) fail \n", __func__, hdmiResolutionValue);
             // Set resolution to 480P
             newHdmiResolutionValue = mHdmiResolutionValueList[HDMI_2D_RESOLUTION_NUM-2];
         } else {
-            LOGD("%s::HDMI resolutions size is calibrated(%d -> %d)..\n", __func__, hdmiResolutionValue, newHdmiResolutionValue);
+            ALOGD("%s::HDMI resolutions size is calibrated(%d -> %d)..\n", __func__, hdmiResolutionValue, newHdmiResolutionValue);
         }
     }
     else {
@@ -952,7 +951,7 @@ bool SecHdmi::setHdcpMode(bool hdcpMode, bool forceRun)
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
 
@@ -974,12 +973,12 @@ bool SecHdmi::setUIRotation(unsigned int rotVal, unsigned int hwcLayer)
     Mutex::Autolock lock(mLock);
 
     if (mFlagCreate == false) {
-        LOGE("%s::Not Yet Created \n", __func__);
+        ALOGE("%s::Not Yet Created \n", __func__);
         return false;
     }
 
     if (rotVal % 90 != 0) {
-        LOGE("%s::Invalid rotation value(%d)", __func__, rotVal);
+        ALOGE("%s::Invalid rotation value(%d)", __func__, rotVal);
         return false;
     }
 
@@ -1029,7 +1028,7 @@ bool SecHdmi::m_reset(int w, int h, int colorFormat, int hdmiLayer, int hwcLayer
     // stop all..
     for (int layer = HDMI_LAYER_BASE + 1; layer < HDMI_LAYER_MAX; layer++) {
         if (mFlagHdmiStart[layer] == true && m_stopHdmi(layer) == false) {
-            LOGE("%s::m_stopHdmi: layer[%d] fail", __func__, layer);
+            ALOGE("%s::m_stopHdmi: layer[%d] fail", __func__, layer);
             return false;
         }
     }
@@ -1047,7 +1046,7 @@ bool SecHdmi::m_reset(int w, int h, int colorFormat, int hdmiLayer, int hwcLayer
             preVideoSrcColorFormat != HAL_PIXEL_FORMAT_CUSTOM_YCbCr_420_SP &&
             preVideoSrcColorFormat != HAL_PIXEL_FORMAT_CUSTOM_YCrCb_420_SP &&
             preVideoSrcColorFormat != HAL_PIXEL_FORMAT_CUSTOM_YCbCr_420_SP_TILED) {
-                LOGI("%s: Unsupported preVideoSrcColorFormat = 0x%x\n", __func__, preVideoSrcColorFormat);
+                ALOGI("%s: Unsupported preVideoSrcColorFormat = 0x%x\n", __func__, preVideoSrcColorFormat);
                 preVideoSrcColorFormat = HAL_PIXEL_FORMAT_CUSTOM_YCbCr_420_SP_TILED;
         }
 
@@ -1063,7 +1062,7 @@ bool SecHdmi::m_reset(int w, int h, int colorFormat, int hdmiLayer, int hwcLayer
 
                 if (mSecFimc.setSrcParams(full_wdith, full_height, 0, 0,
                             (unsigned int*)&w, (unsigned int*)&h, colorFormat, true) == false) {
-                    LOGE("%s::mSecFimc.setSrcParams(%d, %d, %d) fail \n",
+                    ALOGE("%s::mSecFimc.setSrcParams(%d, %d, %d) fail \n",
                             __func__, w, h, colorFormat);
                     return false;
                 }
@@ -1075,14 +1074,14 @@ bool SecHdmi::m_reset(int w, int h, int colorFormat, int hdmiLayer, int hwcLayer
                 if (mUIRotVal == 0 || mUIRotVal == 180) {
                     if (mSecFimc.setDstParams((unsigned int)w, (unsigned int)h, 0, 0,
                                 (unsigned int*)&w, (unsigned int*)&h, mFimcDstColorFormat, true) == false) {
-                        LOGE("%s::mSecFimc.setDstParams(%d, %d, %d) fail \n",
+                        ALOGE("%s::mSecFimc.setDstParams(%d, %d, %d) fail \n",
                                 __func__, w, h, mFimcDstColorFormat);
                         return false;
                     }
                 } else {
                     if (mSecFimc.setDstParams((unsigned int)h, (unsigned int)w, 0, 0,
                                 (unsigned int*)&h, (unsigned int*)&w, mFimcDstColorFormat, true) == false) {
-                        LOGE("%s::mSecFimc.setDstParams(%d, %d, %d) fail \n",
+                        ALOGE("%s::mSecFimc.setDstParams(%d, %d, %d) fail \n",
                                 __func__, w, h, mFimcDstColorFormat);
                         return false;
                     }
@@ -1123,28 +1122,28 @@ bool SecHdmi::m_reset(int w, int h, int colorFormat, int hdmiLayer, int hwcLayer
 #endif
 
         if (m_setHdmiOutputMode(mHdmiOutputMode) == false) {
-            LOGE("%s::m_setHdmiOutputMode() fail \n", __func__);
+            ALOGE("%s::m_setHdmiOutputMode() fail \n", __func__);
             return false;
         }
         if (mHdmiOutputMode == COMPOSITE_OUTPUT_MODE) {
             std_id = composite_std_2_v4l2_std_id(mCompositeStd);
             if ((int)std_id < 0) {
-                LOGE("%s::composite_std_2_v4l2_std_id(%d) fail\n", __func__, mCompositeStd);
+                ALOGE("%s::composite_std_2_v4l2_std_id(%d) fail\n", __func__, mCompositeStd);
                 return false;
             }
             if (m_setCompositeResolution(mCompositeStd) == false) {
-                LOGE("%s::m_setCompositeRsolution() fail \n", __func__);
+                ALOGE("%s::m_setCompositeRsolution() fail \n", __func__);
                 return false;
             }
         } else if (mHdmiOutputMode >= HDMI_OUTPUT_MODE_YCBCR &&
                    mHdmiOutputMode <= HDMI_OUTPUT_MODE_DVI) {
             if (m_setHdmiResolution(mHdmiResolutionValue, mHdmiS3DMode) == false) {
-                LOGE("%s::m_setHdmiResolution() fail \n", __func__);
+                ALOGE("%s::m_setHdmiResolution() fail \n", __func__);
                 return false;
             }
 
             if (m_setHdcpMode(mHdcpMode) == false) {
-                LOGE("%s::m_setHdcpMode() fail \n", __func__);
+                ALOGE("%s::m_setHdcpMode() fail \n", __func__);
                 return false;
             }
             std_id = mHdmiStdId;
@@ -1154,12 +1153,12 @@ bool SecHdmi::m_reset(int w, int h, int colorFormat, int hdmiLayer, int hwcLayer
 
         for (int layer = HDMI_LAYER_BASE + 1; layer < HDMI_LAYER_MAX; layer++) {
             if (hdmi_deinit_layer(layer) < 0)
-                LOGE("%s::hdmi_init_layer(%d) fail \n", __func__, layer);
+                ALOGE("%s::hdmi_init_layer(%d) fail \n", __func__, layer);
         }
 
         for (int layer = HDMI_LAYER_BASE + 1; layer < HDMI_LAYER_MAX; layer++) {
             if (hdmi_init_layer(layer) < 0)
-                LOGE("%s::hdmi_init_layer(%d) fail \n", __func__, layer);
+                ALOGE("%s::hdmi_init_layer(%d) fail \n", __func__, layer);
         }
 
         if (mHdmiOutputMode >= HDMI_OUTPUT_MODE_YCBCR &&
@@ -1170,7 +1169,7 @@ bool SecHdmi::m_reset(int w, int h, int colorFormat, int hdmiLayer, int hwcLayer
 #endif
 
             if (m_setAudioMode(mAudioMode) == false)
-                LOGE("%s::m_setAudioMode() fail \n", __func__);
+                ALOGE("%s::m_setAudioMode() fail \n", __func__);
         }
 
         mHdmiInfoChange = false;
@@ -1206,7 +1205,7 @@ bool SecHdmi::m_startHdmi(int hdmiLayer)
         }
         break;
     default :
-        LOGE("%s::unmathced layer(%d) fail", __func__, hdmiLayer);
+        ALOGE("%s::unmathced layer(%d) fail", __func__, hdmiLayer);
         ret = false;
         break;
     }
@@ -1220,7 +1219,7 @@ bool SecHdmi::m_stopHdmi(int hdmiLayer)
 
     bool ret = true;
     if (mFlagHdmiStart[hdmiLayer] == false) {
-        LOGD("%s::already HDMI(%d layer) stopped.. \n", __func__, hdmiLayer);
+        ALOGD("%s::already HDMI(%d layer) stopped.. \n", __func__, hdmiLayer);
         return true;
     }
 
@@ -1248,7 +1247,7 @@ bool SecHdmi::m_stopHdmi(int hdmiLayer)
         }
         break;
     default :
-        LOGE("%s::unmathced layer(%d) fail", __func__, hdmiLayer);
+        ALOGE("%s::unmathced layer(%d) fail", __func__, hdmiLayer);
         ret = false;
         break;
     }
@@ -1269,7 +1268,7 @@ bool SecHdmi::m_setHdmiOutputMode(int hdmiOutputMode)
 
     int v4l2OutputType = hdmi_outputmode_2_v4l2_output_type(hdmiOutputMode);
     if (v4l2OutputType < 0) {
-        LOGE("%s::hdmi_outputmode_2_v4l2_output_type(%d) fail\n", __func__, hdmiOutputMode);
+        ALOGE("%s::hdmi_outputmode_2_v4l2_output_type(%d) fail\n", __func__, hdmiOutputMode);
         return false;
     }
 
@@ -1288,7 +1287,7 @@ bool SecHdmi::m_setCompositeResolution(unsigned int compositeStdId)
     int h = 0;
 
     if (mHdmiOutputMode != COMPOSITE_OUTPUT_MODE) {
-        LOGE("%s:: not supported output type \n", __func__);
+        ALOGE("%s:: not supported output type \n", __func__);
         return false;
     }
 
@@ -1307,7 +1306,7 @@ bool SecHdmi::m_setCompositeResolution(unsigned int compositeStdId)
         h = 576;
         break;
     default:
-        LOGE("%s::unmathced composite_std(%d)", __func__, compositeStdId);
+        ALOGE("%s::unmathced composite_std(%d)", __func__, compositeStdId);
         return false;
     }
 
@@ -1337,12 +1336,12 @@ bool SecHdmi::m_setHdmiResolution(unsigned int hdmiResolutionValue, unsigned int
     if (mHdmiOutputMode >= HDMI_OUTPUT_MODE_YCBCR &&
         mHdmiOutputMode <= HDMI_OUTPUT_MODE_DVI) {
         if (hdmi_resolution_2_std_id(hdmiResolutionValue, s3dMode, &w, &h, &std_id) < 0) {
-            LOGE("%s::hdmi_resolution_2_std_id(%d) fail\n", __func__, hdmiResolutionValue);
+            ALOGE("%s::hdmi_resolution_2_std_id(%d) fail\n", __func__, hdmiResolutionValue);
             return false;
         }
         mHdmiStdId    = std_id;
     } else {
-        LOGE("%s:: not supported output type \n", __func__);
+        ALOGE("%s:: not supported output type \n", __func__);
         return false;
     }
 
@@ -1394,7 +1393,7 @@ bool SecHdmi::m_setAudioMode(int audioMode)
     }
 
     if (hdmi_check_audio() < 0) {
-        LOGE("%s::hdmi_check_audio() fail \n", __func__);
+        ALOGE("%s::hdmi_check_audio() fail \n", __func__);
         return false;
     }
 
@@ -1431,7 +1430,7 @@ int SecHdmi::m_resolutionValueIndex(unsigned int ResolutionValue, unsigned int s
             }
         }
     } else {
-        LOGE("%s::Unsupported S3D mode(%d)\n", __func__, s3dMode);
+        ALOGE("%s::Unsupported S3D mode(%d)\n", __func__, s3dMode);
     }
 
     return index;
@@ -1444,8 +1443,12 @@ bool SecHdmi::m_flagHWConnected(void)
     bool ret = true;
     int hdmiStatus = hdmi_cable_status();
 
-    if (hdmiStatus <= 0) {
+    if (hdmiStatus < 0) {
         LOG_LIB_HDMI("%s::hdmi_cable_status() fail \n", __func__);
+        ret = false;
+    }
+    else if (hdmiStatus == 0) {
+        LOG_LIB_HDMI("%s::hdmi_cable_status() not connected \n", __func__);
         ret = false;
     } else {
         ret = true;

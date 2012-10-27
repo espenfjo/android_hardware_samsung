@@ -34,8 +34,8 @@
 #include <cutils/log.h>
 #include <binder/IBinder.h>
 #include <binder/IServiceManager.h>
-#include <surfaceflinger/ISurfaceComposer.h>
-#include <surfaceflinger/SurfaceComposerClient.h>
+#include <gui/ISurfaceComposer.h>
+#include <gui/SurfaceComposerClient.h>
 #include "ISecTVOut.h"
 
 #define GETSERVICETIMEOUT (5)
@@ -87,6 +87,13 @@ public:
         void setForceMirrorMode(int forceMirrorMode);
 
         uint32_t getHdmiCableStatus();
+        void setVideoRotation(int rotation);
+        void setVideoMode(int mode);
+	void setMirrorWithVideoMode(int mode);
+	void disableLayer(unsigned int);
+	int getHdmiResolution();
+	int getVideoMode();
+	int getHdmiAudioChannel();
 
 private:
         sp<ISecTVOut> m_getSecTVOutService(void);
