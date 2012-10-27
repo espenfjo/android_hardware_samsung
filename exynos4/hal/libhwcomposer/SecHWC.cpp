@@ -902,7 +902,7 @@ static int hwc_query(struct hwc_composer_device* dev,
         break;
     case HWC_VSYNC_PERIOD:
         // vsync period in nanosecond
-        value[0] = 1000000000.0 / 60;
+        value[0] = 1000000000.0 / 57;
         break;
     default:
         // unsupported query
