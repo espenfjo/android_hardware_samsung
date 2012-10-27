@@ -984,6 +984,9 @@ static int hwc_device_close(struct hw_device_t *dev)
     }
     return ret;
 }
+static const struct hwc_methods hwc_methods = {
+eventControl: hwc_eventControl
+};
 
 static int hwc_device_open(const struct hw_module_t* module, const char* name,
         struct hw_device_t** device)
@@ -1003,12 +1006,15 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
 
     /* initialize the procs */
     dev->device.common.tag = HARDWARE_DEVICE_TAG;
-    dev->device.common.version = 0;
+    dev->device.common.version = 3;
     dev->device.common.module = const_cast<hw_module_t*>(module);
     dev->device.common.close = hwc_device_close;
 
     dev->device.prepare = hwc_prepare;
     dev->device.set = hwc_set;
+    dev->device.query = hwc_query;
+    dev->device.registerProcs = hwc_registerProcs;
+    dev->device.methods = &hwc_methods;
 
     *device = &dev->device.common;
 
