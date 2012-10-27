@@ -23,10 +23,6 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_SHARED_LIBRARIES := liblog libcutils libEGL \
 			  libGLESv1_CM
 
-ifeq ($(BOARD_USE_V4L2_ION),true)
-LOCAL_SHARED_LIBRARIES += libion
-endif
-
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/../include
 
@@ -44,9 +40,9 @@ endif
 
 ifeq ($(BOARD_USES_HDMI),true)
 LOCAL_C_INCLUDES += \
-	$(TARGET_HAL_PATH)/libhwcomposer \
-	$(TARGET_HAL_PATH)/include \
-	$(TARGET_HAL_PATH)/libhdmi/libhdmiservice
+	$(LOCAL_PATH)/../include \
+	$(LOCAL_PATH)/../libhwcomposer \
+	$(LOCAL_PATH)/../libhdmi/libhdmiservice
 
 LOCAL_SHARED_LIBRARIES 	+= libhdmiclient libTVOut
 
@@ -73,14 +69,6 @@ endif
 ifeq ($(BOARD_HDMI_STD),STD_1080P)
 LOCAL_CFLAGS  += -DSTD_1080P
 endif
-endif
-
-ifeq ($(BOARD_USE_V4L2),true)
-LOCAL_CFLAGS += -DBOARD_USE_V4L2
-endif
-
-ifeq ($(BOARD_USE_V4L2_ION),true)
-LOCAL_CFLAGS += -DBOARD_USE_V4L2_ION
 endif
 
 LOCAL_MODULE := hwcomposer.$(TARGET_BOARD_PLATFORM)
