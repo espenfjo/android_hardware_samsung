@@ -485,7 +485,7 @@ int fimc_v4l2_clr_buf(int fd, enum v4l2_buf_type type)
 int fimc_v4l2_S_ctrl(int fd)
 {
     struct v4l2_control vc;
-#define V4L2_CID_CACHEABLE (V4L2_CID_BASE+40)
+
     vc.id = V4L2_CID_CACHEABLE;
     vc.value = 1;
 
