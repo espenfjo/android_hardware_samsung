@@ -48,7 +48,7 @@
 #include "s3c_lcd.h"
 #include "sec_format.h"
 
-#define HWC_DEBUG
+#define HWC_DEBUG 1
 #if defined(BOARD_USES_FIMGAPI)
 #include "sec_g2d.h"
 #endif
@@ -154,7 +154,6 @@ struct hwc_context_t {
 
     /* our private state goes below here */
     struct hwc_win_info_t     win[NUM_OF_WIN];
-	struct hwc_win_info_t     ui_win;
 #ifdef SKIP_DUMMY_UI_LAY_DRAWING
     struct hwc_ui_lay_info    win_virt[NUM_OF_DUMMY_WIN];
     int                       fb_lay_skip_initialized;

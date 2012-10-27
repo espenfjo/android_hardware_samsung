@@ -613,7 +613,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
             ctx->num_of_fb_layer++;
         }
 #if defined(BOARD_USES_HDMI)
-        SEC_HWC_Log(HWC_LOG_DEBUG, "ext disp vid = %d, cable status = %d, composition type = %d", 
+        SEC_HWC_Log(HWC_LOG_DEBUG, "ext disp vid = %d, cable status = %d, composition type = %d",
                 ctx->num_of_ext_disp_video_layer, ctx->hdmi_cable_status, compositionType);
         if (ctx->num_of_ext_disp_video_layer >= 2) {
             if ((ctx->hdmi_cable_status) &&
@@ -902,7 +902,7 @@ static int hwc_query(struct hwc_composer_device* dev,
         break;
     case HWC_VSYNC_PERIOD:
         // vsync period in nanosecond
-        value[0] = 1000000000.0 / 57;
+        value[0] = 1000000000.0 / 60;
         break;
     default:
         // unsupported query
@@ -919,7 +919,7 @@ static int hwc_eventControl(struct hwc_composer_device* dev,
     switch (event) {
     case HWC_EVENT_VSYNC:
         int val = !!enabled;
-        int err = ioctl(ctx->ui_win.fd, S3CFB_SET_VSYNC_INT, &val);
+        int err = ioctl(ctx->win[0].fd, S3CFB_SET_VSYNC_INT, &val);
         if (err < 0)
             return -errno;
 
@@ -942,7 +942,6 @@ static void *hwc_vsync_sysfs_loop(void *data)
     vsync_timestamp_fd = open("/sys/devices/platform/samsung-pd.2/s3cfb.0/vsync_time", O_RDONLY);
     if (!vsync_timestamp_fd)
         return NULL;
-
     char thread_name[64] = "hwcVsyncThread";
     prctl(PR_SET_NAME, (unsigned long) &thread_name, 0, 0, 0);
     setpriority(PRIO_PROCESS, 0, -20);
@@ -952,7 +951,6 @@ static void *hwc_vsync_sysfs_loop(void *data)
 
     FD_ZERO(&exceptfds);
     FD_SET(vsync_timestamp_fd, &exceptfds);
-
     do {
         ssize_t len = read(vsync_timestamp_fd, buf, sizeof(buf));
         timestamp = strtoull(buf, NULL, 0);
