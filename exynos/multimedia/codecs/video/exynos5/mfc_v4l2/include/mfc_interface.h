@@ -99,6 +99,15 @@ typedef struct {
     int chroma1;    /* per frame (or bottom field) */
 } SSBSIP_MFC_CRC_DATA;
 
+#ifdef S3D_SUPPORT
+struct mfc_frame_pack_sei_info {
+    int sei_avail;
+    unsigned int arrgment_id;
+    int sei_info;
+    int grid_pos;
+};
+#endif
+
 struct mfc_strm_ref_buf_arg {
     unsigned int strm_ref_y;
     unsigned int mv_ref_yc;
@@ -448,6 +457,22 @@ struct mfc_enc_hier_p_qp {
     int t3_frame_qp;
 };
 
+#ifdef S3D_SUPPORT
+struct mfc_enc_sei_info {
+    int sei_gen_enable;
+    int curr_frame_frm0_flag;
+    int frame_pack_arrgment_type;
+};
+#endif
+
+struct mfc_enc_fmo {
+    unsigned int slice_map_type;
+    unsigned int slice_num_grp;
+    unsigned int run_length[4];
+    unsigned int sg_dir;
+    unsigned int sg_rate;
+};
+
 enum BUF_STATUS {
     BUF_ENQUEUED,
     BUF_DEQUEUED
@@ -541,6 +566,14 @@ typedef struct {
 
     int hier_p_enable;
     struct mfc_enc_hier_p_qp hier_qp_value;
+#ifdef S3D_SUPPORT
+    struct mfc_enc_sei_info sei_info;
+#endif
+    int fmo_enable;
+    struct mfc_enc_fmo fmo_value;
+    int aso_enable;
+    int aso_sl_order[8];
+
 
     /*ION related*/
     int ion_fd;

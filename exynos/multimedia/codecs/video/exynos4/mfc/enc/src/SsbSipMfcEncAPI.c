@@ -223,6 +223,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
 
         pCTX->width = mpeg4_arg->SourceWidth;
         pCTX->height = mpeg4_arg->SourceHeight;
+        pCTX->framemap = mpeg4_arg->FrameMap;
         break;
 
     case H263_ENC:
@@ -231,6 +232,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
 
         pCTX->width = h263_arg->SourceWidth;
         pCTX->height = h263_arg->SourceHeight;
+        pCTX->framemap = h263_arg->FrameMap;
         break;
 
     case H264_ENC:
@@ -239,6 +241,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
 
         pCTX->width = h264_arg->SourceWidth;
         pCTX->height = h264_arg->SourceHeight;
+        pCTX->framemap = h264_arg->FrameMap;
         break;
 
     default:
@@ -257,6 +260,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
 
         EncArg.args.enc_init.cmn.in_ms_mode = mpeg4_arg->SliceMode;
         EncArg.args.enc_init.cmn.in_ms_arg = mpeg4_arg->SliceArgument;
+        EncArg.args.enc_init.cmn.in_output_mode = mpeg4_arg->OutputMode;
 
         EncArg.args.enc_init.cmn.in_mb_refresh = mpeg4_arg->RandomIntraMBRefresh;
 
@@ -325,6 +329,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
 
         EncArg.args.enc_init.cmn.in_ms_mode = h263_arg->SliceMode;
         EncArg.args.enc_init.cmn.in_ms_arg = 0;
+        EncArg.args.enc_init.cmn.in_output_mode = FRAME;  /* not support to slice output mode */
 
         EncArg.args.enc_init.cmn.in_mb_refresh = h263_arg->RandomIntraMBRefresh;
 
@@ -381,6 +386,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
             return MFC_RET_INVALID_PARAM;
         }
         EncArg.args.enc_init.cmn.in_ms_arg = h264_arg->SliceArgument;
+        EncArg.args.enc_init.cmn.in_output_mode = h264_arg->OutputMode;
 
         EncArg.args.enc_init.cmn.in_mb_refresh = h264_arg->RandomIntraMBRefresh;
         /* pad control */
@@ -583,7 +589,6 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncGetInBuf(void *openHandle, SSBSIP_MFC_ENC_INPU
     _MFCLIB *pCTX;
     struct mfc_common_args user_addr_arg, real_addr_arg;
     int y_size, c_size;
-    int aligned_y_size, aligned_c_size;
 
     if (openHandle == NULL) {
         ALOGE("SsbSipMfcEncGetInBuf] openHandle is NULL");
@@ -592,17 +597,17 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncGetInBuf(void *openHandle, SSBSIP_MFC_ENC_INPU
 
     pCTX  = (_MFCLIB *) openHandle;
 
-    /* FIXME: */
-    y_size = pCTX->width * pCTX->height;
-    c_size = (pCTX->width * pCTX->height) >> 1;
-
-    /* lenear: 2KB, tile: 8KB */
-    aligned_y_size = Align(y_size, 64 * BUF_L_UNIT);
-    aligned_c_size = Align(c_size, 64 * BUF_L_UNIT);
+    if (NV12_TILE == pCTX->framemap) {
+        y_size = Align(Align(pCTX->width, 128) * Align(pCTX->height, 32), 8192);
+        c_size = Align(Align(pCTX->width, 128) * Align(pCTX->height >> 1, 32), 8192);
+    } else {
+        y_size = Align(Align(pCTX->width, 16) * Align(pCTX->height, 16), 2048);
+        c_size = Align(Align(pCTX->width, 16) * Align(pCTX->height >> 1, 8), 2048);
+    }
 
     /* Allocate luma & chroma buf */
     user_addr_arg.args.mem_alloc.type = ENCODER;
-    user_addr_arg.args.mem_alloc.buff_size = aligned_y_size + aligned_c_size;
+    user_addr_arg.args.mem_alloc.buff_size = y_size + c_size;
     user_addr_arg.args.mem_alloc.mapped_addr = pCTX->mapped_addr;
     ret_code = ioctl(pCTX->hMFC, IOCTL_MFC_GET_IN_BUF, &user_addr_arg);
     if (ret_code < 0) {
@@ -611,7 +616,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncGetInBuf(void *openHandle, SSBSIP_MFC_ENC_INPU
     }
 
     pCTX->virFrmBuf.luma = pCTX->mapped_addr + user_addr_arg.args.mem_alloc.offset;
-    pCTX->virFrmBuf.chroma = pCTX->mapped_addr + user_addr_arg.args.mem_alloc.offset + (unsigned int)aligned_y_size;
+    pCTX->virFrmBuf.chroma = pCTX->mapped_addr + user_addr_arg.args.mem_alloc.offset + (unsigned int)y_size;
 
     real_addr_arg.args.real_addr.key = user_addr_arg.args.mem_alloc.offset;
     ret_code = ioctl(pCTX->hMFC, IOCTL_MFC_GET_REAL_ADDR, &real_addr_arg);
@@ -620,7 +625,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncGetInBuf(void *openHandle, SSBSIP_MFC_ENC_INPU
         return MFC_RET_ENC_GET_INBUF_FAIL;
     }
     pCTX->phyFrmBuf.luma = real_addr_arg.args.real_addr.addr;
-    pCTX->phyFrmBuf.chroma = real_addr_arg.args.real_addr.addr + (unsigned int)aligned_y_size;
+    pCTX->phyFrmBuf.chroma = real_addr_arg.args.real_addr.addr + (unsigned int)y_size;
 
     pCTX->sizeFrmBuf.luma = (unsigned int)y_size;
     pCTX->sizeFrmBuf.chroma = (unsigned int)c_size;
@@ -640,7 +645,6 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncSetInBuf(void *openHandle, SSBSIP_MFC_ENC_INPU
     int ret_code;
     struct mfc_common_args user_addr_arg, real_addr_arg;
     int y_size, c_size;
-    int aligned_y_size, aligned_c_size;
 
     if (openHandle == NULL) {
         ALOGE("SsbSipMfcEncSetInBuf] openHandle is NULL");
@@ -651,13 +655,13 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncSetInBuf(void *openHandle, SSBSIP_MFC_ENC_INPU
 
     pCTX  = (_MFCLIB *) openHandle;
 
-    /* FIXME: */
-    y_size = pCTX->width * pCTX->height;
-    c_size = (pCTX->width * pCTX->height) >> 1;
-
-    /* lenear: 2KB, tile: 8KB */
-    aligned_y_size = Align(y_size, 64 * BUF_L_UNIT);
-    aligned_c_size = Align(c_size, 64 * BUF_L_UNIT);
+    if (NV12_TILE == pCTX->framemap) {
+        y_size = Align(Align(pCTX->width, 128) * Align(pCTX->height, 32), 8192);
+        c_size = Align(Align(pCTX->width, 128) * Align(pCTX->height >> 1, 32), 8192);
+    } else {
+        y_size = Align(Align(pCTX->width, 16) * Align(pCTX->height, 16), 2048);
+        c_size = Align(Align(pCTX->width, 16) * Align(pCTX->height >> 1, 8), 2048);
+    }
 
     pCTX->phyFrmBuf.luma = (unsigned int)input_info->YPhyAddr;
     pCTX->phyFrmBuf.chroma = (unsigned int)input_info->CPhyAddr;

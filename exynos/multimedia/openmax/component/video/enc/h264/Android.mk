@@ -24,15 +24,9 @@ endif
 LOCAL_ARM_MODE := arm
 
 LOCAL_STATIC_LIBRARIES := libSEC_OMX_Venc libsecosal libsecbasecomponent \
-	libseccscapi
+	libswconverter libsecmfcapi
 LOCAL_SHARED_LIBRARIES := libc libdl libcutils libutils libui \
-	libSEC_OMX_Resourcemanager
-
-ifeq ($(TARGET_SOC),exynos4x12)
-LOCAL_SHARED_LIBRARIES += libsecmfcdecapi libsecmfcencapi
-else
-LOCAL_STATIC_LIBRARIES += libsecmfcapi
-endif
+	libSEC_OMX_Resourcemanager libcsc
 
 LOCAL_C_INCLUDES := $(SEC_OMX_INC)/khronos \
 	$(SEC_OMX_INC)/sec \
@@ -40,6 +34,7 @@ LOCAL_C_INCLUDES := $(SEC_OMX_INC)/khronos \
 	$(SEC_OMX_TOP)/core \
 	$(SEC_OMX_COMPONENT)/common \
 	$(SEC_OMX_COMPONENT)/video/enc \
-    $(TARGET_OUT_HEADERS)/$(SEC_COPY_HEADERS_TO)
+	$(TOP)/hardware/samsung/exynos/multimedia/codecs/video/exynos4/mfc/include \
+	$(TOP)/hardware/samsung/$(TARGET_BOARD_PLATFORM)/hal/libcsc
 
 include $(BUILD_SHARED_LIBRARY)

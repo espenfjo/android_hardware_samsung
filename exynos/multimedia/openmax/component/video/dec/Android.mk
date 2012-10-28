@@ -13,7 +13,9 @@ LOCAL_C_INCLUDES := $(SEC_OMX_INC)/khronos \
 	$(SEC_OMX_TOP)/osal \
 	$(SEC_OMX_TOP)/core \
 	$(SEC_OMX_COMPONENT)/common \
-	$(SEC_OMX_COMPONENT)/video/dec
+	$(SEC_OMX_COMPONENT)/video/dec \
+	$(EXYNOS_VIDEO_CODEC)/mfc/include \
+	$(TOP)/hardware/samsung_slsi/$(TARGET_BOARD_PLATFORM)/libcsc
 
 ifeq ($(BOARD_USE_ANB), true)
 LOCAL_STATIC_LIBRARIES := libsecosal

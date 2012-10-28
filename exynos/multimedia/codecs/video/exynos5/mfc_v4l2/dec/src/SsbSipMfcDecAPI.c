@@ -43,10 +43,6 @@
 #define LOG_TAG "MFC_DEC_APP"
 #include <utils/Log.h>
 
-#ifdef CONFIG_MFC_FPS
-#include <sys/time.h>
-#endif
-
 /*#define CRC_ENABLE
 #define SLICE_MODE_ENABLE */
 #define POLL_DEC_WAIT_TIMEOUT 25
@@ -55,13 +51,12 @@
 #define VOP_START_CODE      (0x000001B6)
 #define MP4_START_CODE      (0x000001)
 
-#ifdef CONFIG_MFC_FPS
-unsigned int framecount, over30ms;
-struct timeval mTS1, mTS2, mDec1, mDec2;
-#endif
-
 #define DEFAULT_NUMBER_OF_EXTRA_DPB 5
 #define CLEAR(x)    memset (&(x), 0, sizeof(x))
+#ifdef S3D_SUPPORT
+#define OPERATE_BIT(x, mask, shift)    ((x & (mask << shift)) >> shift)
+#define FRAME_PACK_SEI_INFO_NUM  4
+#endif
 
 enum {
     NV12MT_FMT = 0,
@@ -154,9 +149,11 @@ int v4l2_mfc_s_fmt(int fd, enum v4l2_buf_type type,
         case VC1RCV_DEC:
             fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_VC1_RCV;
             break;
+#if defined (MFC6x_VERSION)
         case VP8_DEC:
             fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_VP8;
             break;
+#endif
         default:
             ALOGE("[%s] Does NOT support the codec type (%d)", __func__, pixelformat);
             return -1;
@@ -165,7 +162,11 @@ int v4l2_mfc_s_fmt(int fd, enum v4l2_buf_type type,
     } else if (type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) {
         switch (pixelformat) {
         case NV12MT_FMT:
+#if defined (MFC6x_VERSION)
             fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12MT_16X16;
+#else
+            fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12MT;
+#endif
             break;
         case NV12M_FMT:
             fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12M;
@@ -271,6 +272,42 @@ int v4l2_mfc_g_ctrl(int fd, int id, int *value)
 
     return ret;
 }
+
+#ifdef S3D_SUPPORT
+int v4l2_mfc_ext_g_ctrl(int fd, SSBSIP_MFC_DEC_CONF conf_type, void *value)
+{
+    struct v4l2_ext_control ext_ctrl[FRAME_PACK_SEI_INFO_NUM];
+    struct v4l2_ext_controls ext_ctrls;
+    struct mfc_frame_pack_sei_info *sei_info;
+    int ret, i;
+
+    ext_ctrls.ctrl_class = V4L2_CTRL_CLASS_CODEC;
+
+    switch (conf_type) {
+    case MFC_DEC_GETCONF_FRAME_PACKING:
+        sei_info = (struct mfc_frame_pack_sei_info *)value;
+        for (i=0; i<FRAME_PACK_SEI_INFO_NUM; i++)
+            CLEAR(ext_ctrl[i]);
+
+        ext_ctrls.count = FRAME_PACK_SEI_INFO_NUM;
+        ext_ctrls.controls = ext_ctrl;
+        ext_ctrl[0].id =  V4L2_CID_CODEC_FRAME_PACK_SEI_AVAIL;
+        ext_ctrl[1].id =  V4L2_CID_CODEC_FRAME_PACK_ARRGMENT_ID;
+        ext_ctrl[2].id =  V4L2_CID_CODEC_FRAME_PACK_SEI_INFO;
+        ext_ctrl[3].id =  V4L2_CID_CODEC_FRAME_PACK_GRID_POS;
+
+        ret = ioctl(fd, VIDIOC_G_EXT_CTRLS, &ext_ctrls);
+
+        sei_info->sei_avail = ext_ctrl[0].value;
+        sei_info->arrgment_id = ext_ctrl[1].value;
+        sei_info->sei_info = ext_ctrl[2].value;
+        sei_info->grid_pos = ext_ctrl[3].value;
+        break;
+    }
+
+    return ret;
+}
+#endif
 
 int v4l2_mfc_qbuf(int fd, struct v4l2_buffer *qbuf, enum v4l2_buf_type type,
         enum v4l2_memory memory, int index,
@@ -436,12 +473,6 @@ void *SsbSipMfcDecOpen(void)
 
     ALOGI("[%s] MFC Library Ver %d.%02d",__func__, MFC_LIB_VER_MAJOR, MFC_LIB_VER_MINOR);
 
-#ifdef CONFIG_MFC_FPS
-    framecount = 0;
-    over30ms = 0;
-    gettimeofday(&mTS1, NULL);
-#endif
-
     pCTX = (_MFCLIB *)malloc(sizeof(_MFCLIB));
     if (pCTX == NULL) {
         ALOGE("[%s] malloc failed.",__func__);
@@ -559,14 +590,6 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecClose(void *openHandle)
 {
     int ret, i;
     _MFCLIB  *pCTX;
-
-#ifdef CONFIG_MFC_FPS
-    ALOGI(">>> MFC");
-    gettimeofday(&mTS2, NULL);
-    ALOGI(">>> time=%d", mTS2.tv_sec-mTS1.tv_sec);
-    ALOGI(">>> framecount=%d", framecount);
-    ALOGI(">>> 30ms over=%d", over30ms);
-#endif
 
     if (openHandle == NULL) {
         ALOGE("[%s] openHandle is NULL",__func__);
@@ -906,7 +929,7 @@ int resolution_change(void *openHandle)
     _MFCLIB *pCTX;
     pCTX  = (_MFCLIB *) openHandle;
 
-    ret = v4l2_mfc_streamoff(pCTX->hMFC, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+    ret = v4l2_mfc_streamoff(pCTX->hMFC, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
     if (ret != 0)
         goto error_case;
 
@@ -950,9 +973,6 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExe(void *openHandle, int lengthBufFill)
     int poll_state;
     int poll_revents;
 
-#ifdef CONFIG_MFC_FPS
-    framecount++;
-#endif
     if (openHandle == NULL) {
         ALOGE("[%s] openHandle is NULL",__func__);
         return MFC_RET_INVALID_PARAM;
@@ -963,53 +983,52 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExe(void *openHandle, int lengthBufFill)
         return MFC_RET_INVALID_PARAM;
     }
 
-#ifdef CONFIG_MFC_FPS
-    gettimeofday(&mDec1, NULL);
-#endif
     pCTX  = (_MFCLIB *) openHandle;
 
     if ((lengthBufFill > 0) && (SSBSIP_MFC_LAST_FRAME_PROCESSED != pCTX->lastframe)) {
-        /* Queue the stream frame */
-        ret = v4l2_mfc_qbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
-                            V4L2_MEMORY_MMAP, pCTX->v4l2_dec.beingUsedIndex, planes, lengthBufFill);
-        if (ret != 0) {
-            ALOGE("[%s] VIDIOC_QBUF failed, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE",__func__);
-            return MFC_RET_DEC_EXE_ERR;
-        }
-
-        memset(&buf, 0, sizeof(buf));
-        buf.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-        buf.memory = V4L2_MEMORY_MMAP;
-        buf.m.planes = planes;
-        buf.length = 1;
-
-        /* wait for decoding */
-        do {
-            poll_state = v4l2_mfc_poll(pCTX->hMFC, &poll_revents, POLL_DEC_WAIT_TIMEOUT);
-            if (poll_state > 0) {
-                if (poll_revents & POLLOUT) {
-                    ret = v4l2_mfc_dqbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, V4L2_MEMORY_MMAP);
-                    if (ret == 0) {
-                        if (buf.flags & V4L2_BUF_FLAG_ERROR)
-                            return MFC_RET_DEC_EXE_ERR;
-                        pCTX->v4l2_dec.mfc_src_buf_flags[buf.index] = BUF_DEQUEUED;
-                        break;
-                    }
-                } else if (poll_revents & POLLERR) {
-                    ALOGE("[%s] POLLERR\n",__func__);
-                    return MFC_RET_DEC_EXE_ERR;
-                } else {
-                    ALOGE("[%s] poll() returns 0x%x\n", __func__, poll_revents);
-                    return MFC_RET_DEC_EXE_ERR;
-                }
-            } else if (poll_state < 0) {
+        if (pCTX->displayStatus != MFC_GETOUTBUF_DISPLAY_ONLY) {
+            /* Queue the stream frame */
+            ret = v4l2_mfc_qbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+                                V4L2_MEMORY_MMAP, pCTX->v4l2_dec.beingUsedIndex, planes, lengthBufFill);
+            if (ret != 0) {
+                ALOGE("[%s] VIDIOC_QBUF failed, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE",__func__);
                 return MFC_RET_DEC_EXE_ERR;
             }
 
-            if (isBreak_loop(pCTX))
-                break;
+            memset(&buf, 0, sizeof(buf));
+            buf.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+            buf.memory = V4L2_MEMORY_MMAP;
+            buf.m.planes = planes;
+            buf.length = 1;
 
-        } while(0 == poll_state);
+            /* wait for decoding */
+            do {
+                poll_state = v4l2_mfc_poll(pCTX->hMFC, &poll_revents, POLL_DEC_WAIT_TIMEOUT);
+                if (poll_state > 0) {
+                    if (poll_revents & POLLOUT) {
+                        ret = v4l2_mfc_dqbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, V4L2_MEMORY_MMAP);
+                        if (ret == 0) {
+                            if (buf.flags & V4L2_BUF_FLAG_ERROR)
+                                return MFC_RET_DEC_EXE_ERR;
+                            pCTX->v4l2_dec.mfc_src_buf_flags[buf.index] = BUF_DEQUEUED;
+                            break;
+                        }
+                    } else if (poll_revents & POLLERR) {
+                        ALOGE("[%s] POLLERR\n",__func__);
+                        return MFC_RET_DEC_EXE_ERR;
+                    } else {
+                        ALOGE("[%s] poll() returns 0x%x\n", __func__, poll_revents);
+                        return MFC_RET_DEC_EXE_ERR;
+                    }
+                } else if (poll_state < 0) {
+                    return MFC_RET_DEC_EXE_ERR;
+                }
+
+                if (isBreak_loop(pCTX))
+                    break;
+
+            } while(0 == poll_state);
+        }
 
         ret = v4l2_mfc_dqbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_MEMORY_MMAP);
         if (ret != 0) {
@@ -1077,6 +1096,17 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExe(void *openHandle, int lengthBufFill)
             }
         } while (ret != 0);
 
+        ret = v4l2_mfc_g_ctrl(pCTX->hMFC, V4L2_CID_CODEC_DISPLAY_STATUS, &ctrl_value);
+        if (ret != 0) {
+            ALOGE("[%s] VIDIOC_G_CTRL failed", __func__);
+            return MFC_RET_DEC_EXE_ERR;
+        }
+        if (ctrl_value == 3) {
+            pCTX->displayStatus = MFC_GETOUTBUF_DISPLAY_END;
+            pCTX->decOutInfo.disp_pic_frame_type = -1;
+            return MFC_RET_OK;
+        }
+
         pCTX->displayStatus = MFC_GETOUTBUF_DISPLAY_ONLY;
 
         pCTX->decOutInfo.YVirAddr = pCTX->v4l2_dec.mfc_dst_bufs[buf.index][0];
@@ -1132,10 +1162,6 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExe(void *openHandle, int lengthBufFill)
     ret = v4l2_mfc_qbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_MEMORY_MMAP,
                         buf.index, planes, 0);
 
-#ifdef CONFIG_MFC_FPS
-    gettimeofday(&mDec2, NULL);
-    if (mDec2.tv_usec-mDec1.tv_usec > 30000) over30ms++;
-#endif
     return MFC_RET_OK;
 }
 
@@ -1147,9 +1173,6 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExeNb(void *openHandle, int lengthBufFill)
     struct v4l2_buffer buf;
     struct v4l2_plane planes[MFC_DEC_NUM_PLANES];
 
-#ifdef CONFIG_MFC_FPS
-    framecount++;
-#endif
     if (openHandle == NULL) {
         ALOGE("[%s] openHandle is NULL",__func__);
         return MFC_RET_INVALID_PARAM;
@@ -1162,7 +1185,8 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExeNb(void *openHandle, int lengthBufFill)
 
     pCTX  = (_MFCLIB *) openHandle;
 
-    if ((lengthBufFill > 0) && (SSBSIP_MFC_LAST_FRAME_PROCESSED != pCTX->lastframe)) {
+    if ((lengthBufFill > 0) && (SSBSIP_MFC_LAST_FRAME_PROCESSED != pCTX->lastframe)
+                            && (pCTX->displayStatus != MFC_GETOUTBUF_DISPLAY_ONLY)) {
         /* Queue the stream frame */
         ret = v4l2_mfc_qbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
                             V4L2_MEMORY_MMAP, pCTX->v4l2_dec.beingUsedIndex, planes, lengthBufFill);
@@ -1228,35 +1252,37 @@ SSBSIP_MFC_DEC_OUTBUF_STATUS SsbSipMfcDecWaitForOutBuf(void *openHandle, SSBSIP_
     pCTX  = (_MFCLIB *) openHandle;
 
     if (SSBSIP_MFC_LAST_FRAME_PROCESSED != pCTX->lastframe) {
-        /* wait for decoding */
-        do {
-            poll_state = v4l2_mfc_poll(pCTX->hMFC, &poll_revents, POLL_DEC_WAIT_TIMEOUT);
-            if (poll_state > 0) {
-                if (poll_revents & POLLOUT) {
-                    buf.m.planes = planes;
-                    buf.length = 1;
-                    ret = v4l2_mfc_dqbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, V4L2_MEMORY_MMAP);
-                    if (ret == 0) {
-                        if (buf.flags & V4L2_BUF_FLAG_ERROR)
-                            return MFC_GETOUTBUF_STATUS_NULL;
-                        pCTX->v4l2_dec.mfc_src_buf_flags[buf.index] = BUF_DEQUEUED;
-                        break;
+        if (pCTX->displayStatus != MFC_GETOUTBUF_DISPLAY_ONLY) {
+            /* wait for decoding */
+            do {
+                poll_state = v4l2_mfc_poll(pCTX->hMFC, &poll_revents, POLL_DEC_WAIT_TIMEOUT);
+                if (poll_state > 0) {
+                    if (poll_revents & POLLOUT) {
+                        buf.m.planes = planes;
+                        buf.length = 1;
+                        ret = v4l2_mfc_dqbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, V4L2_MEMORY_MMAP);
+                        if (ret == 0) {
+                            if (buf.flags & V4L2_BUF_FLAG_ERROR)
+                                return MFC_GETOUTBUF_STATUS_NULL;
+                            pCTX->v4l2_dec.mfc_src_buf_flags[buf.index] = BUF_DEQUEUED;
+                            break;
+                        }
+                    } else if (poll_revents & POLLERR) {
+                        ALOGE("[%s] POLLERR\n",__func__);
+                        return MFC_GETOUTBUF_STATUS_NULL;
+                    } else {
+                        ALOGE("[%s] poll() returns 0x%x\n", __func__, poll_revents);
+                        return MFC_GETOUTBUF_STATUS_NULL;
                     }
-                } else if (poll_revents & POLLERR) {
-                    ALOGE("[%s] POLLERR\n",__func__);
-                    return MFC_GETOUTBUF_STATUS_NULL;
-                } else {
-                    ALOGE("[%s] poll() returns 0x%x\n", __func__, poll_revents);
+                } else if (poll_state < 0) {
                     return MFC_GETOUTBUF_STATUS_NULL;
                 }
-            } else if (poll_state < 0) {
-                return MFC_GETOUTBUF_STATUS_NULL;
-            }
 
-            if (isBreak_loop(pCTX))
-                break;
+                if (isBreak_loop(pCTX))
+                    break;
 
-        } while (poll_state == 0);
+            } while (0 == poll_state);
+        }
 
         ret = v4l2_mfc_dqbuf(pCTX->hMFC, &buf, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_MEMORY_MMAP);
         if (ret != 0) {
@@ -1314,6 +1340,17 @@ SSBSIP_MFC_DEC_OUTBUF_STATUS SsbSipMfcDecWaitForOutBuf(void *openHandle, SSBSIP_
                 break;
             }
         } while (ret != 0);
+
+        ret = v4l2_mfc_g_ctrl(pCTX->hMFC, V4L2_CID_CODEC_DISPLAY_STATUS, &ctrl_value);
+        if (ret != 0) {
+            ALOGE("[%s] VIDIOC_G_CTRL failed", __func__);
+            return MFC_RET_DEC_GET_CONF_FAIL;
+        }
+        if (ctrl_value == 3) {
+            pCTX->displayStatus = MFC_GETOUTBUF_DISPLAY_END;
+            pCTX->decOutInfo.disp_pic_frame_type = -1;
+            return SsbSipMfcDecGetOutBuf(pCTX, output_info);;
+        }
 
         pCTX->displayStatus = MFC_GETOUTBUF_DISPLAY_ONLY;
 
@@ -1583,7 +1620,12 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecSetConfig(void *openHandle, SSBSIP_MFC_DEC_CON
         id = V4L2_CID_CODEC_LOOP_FILTER_MPEG4_ENABLE;
         ctrl_value = *((unsigned int*)value);
         break;
-
+#ifdef S3D_SUPPORT
+    case MFC_DEC_SETCONF_SEI_PARSE:
+        id = V4L2_CID_CODEC_FRAME_PACK_SEI_PARSE;
+        ctrl_value = 1;
+        break;
+#endif
     default:
         ALOGE("[%s] conf_type(%d) is NOT supported",__func__, conf_type);
         return MFC_RET_INVALID_PARAM;
@@ -1605,6 +1647,10 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecGetConfig(void *openHandle, SSBSIP_MFC_DEC_CON
     SSBSIP_MFC_IMG_RESOLUTION *img_resolution;
     int ret;
     SSBSIP_MFC_CRC_DATA *crc_data;
+#ifdef S3D_SUPPORT
+    SSBSIP_MFC_FRAME_PACKING *frame_packing;
+    struct mfc_frame_pack_sei_info sei_info;
+#endif
     SSBSIP_MFC_CROP_INFORMATION *crop_information;
 
     if (openHandle == NULL) {
@@ -1651,7 +1697,32 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecGetConfig(void *openHandle, SSBSIP_MFC_DEC_CON
         ALOGI("[%s] crc_data->luma0=0x%x\n", __func__, crc_data->luma0);
         ALOGI("[%s] crc_data->chroma0=0x%x\n", __func__, crc_data->chroma0);
         break;
+#ifdef S3D_SUPPORT
+    case MFC_DEC_GETCONF_FRAME_PACKING:
+        frame_packing = (SSBSIP_MFC_FRAME_PACKING *)value;
 
+        ret = v4l2_mfc_ext_g_ctrl(pCTX->hMFC, conf_type, &sei_info);
+        if (ret != 0) {
+            printf("Error to do ext_g_ctrl.\n");
+        }
+        frame_packing->available = sei_info.sei_avail;
+        frame_packing->arrangement_id = sei_info.arrgment_id;
+
+        frame_packing->arrangement_cancel_flag = OPERATE_BIT(sei_info.sei_info, 0x1, 0);
+        frame_packing->arrangement_type = OPERATE_BIT(sei_info.sei_info, 0x3f, 1);
+        frame_packing->quincunx_sampling_flag = OPERATE_BIT(sei_info.sei_info, 0x1, 8);
+        frame_packing->content_interpretation_type = OPERATE_BIT(sei_info.sei_info, 0x3f, 9);
+        frame_packing->spatial_flipping_flag = OPERATE_BIT(sei_info.sei_info, 0x1, 15);
+        frame_packing->frame0_flipped_flag = OPERATE_BIT(sei_info.sei_info, 0x1, 16);
+        frame_packing->field_views_flag = OPERATE_BIT(sei_info.sei_info, 0x1, 17);
+        frame_packing->current_frame_is_frame0_flag = OPERATE_BIT(sei_info.sei_info, 0x1, 18);
+
+        frame_packing->frame0_grid_pos_x = OPERATE_BIT(sei_info.sei_info, 0xf, 0);
+        frame_packing->frame0_grid_pos_y = OPERATE_BIT(sei_info.sei_info, 0xf, 4);
+        frame_packing->frame1_grid_pos_x = OPERATE_BIT(sei_info.sei_info, 0xf, 8);
+        frame_packing->frame1_grid_pos_y = OPERATE_BIT(sei_info.sei_info, 0xf, 12);
+        break;
+#endif
     case MFC_DEC_GETCONF_CROP_INFO:
         crop_information = (SSBSIP_MFC_CROP_INFORMATION *)value;
         crop_information->crop_top_offset = pCTX->decOutInfo.crop_top_offset;

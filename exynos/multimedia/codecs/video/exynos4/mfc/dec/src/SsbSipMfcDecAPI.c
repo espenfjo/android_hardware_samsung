@@ -89,7 +89,7 @@ static int isPBPacked(_MFCLIB *pCtx, int Frameleng)
 
         do {
             if (*strmBuffer == 'p') {
-                /*ALOGI(">> peter strmBuffer = 0x%08x <<\n", *strmBuffer);*/
+                /*LOGI(">> peter strmBuffer = 0x%08x <<\n", *strmBuffer);*/
                 ALOGW("isPBPacked] Packed PB\n");
                 return 1;
             }
@@ -366,7 +366,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExe(void *openHandle, int lengthBufFill)
 #ifdef CONFIG_MFC_FPS
     gettimeofday(&mDec1, NULL);
 
-#ifdef CONFIG_MFC_PERF_ALOG
+#ifdef CONFIG_MFC_PERF_LOG
     if (framecount != 0) {
         if (mDec2.tv_sec == mDec1.tv_sec)
             ALOGI("SsbSipMfcDecExe] Interval between IOCTL_MFC_DEC_EXE's (end to start) = %8d", (mDec1.tv_usec - mDec2.tv_usec));
@@ -390,13 +390,13 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecExe(void *openHandle, int lengthBufFill)
     if (mDec1.tv_sec == mDec2.tv_sec) {
         if (mDec2.tv_usec - mDec1.tv_usec > 30000)
             over30ms++;
-#ifdef CONFIG_MFC_PERF_ALOG
+#ifdef CONFIG_MFC_PERF_LOG
         ALOGI("SsbSipMfcDecExe] Time consumed for IOCTL_MFC_DEC_EXE = %8d", ((mDec2.tv_usec - mDec1.tv_usec)));
 #endif
     } else {
         if (1000000 + mDec2.tv_usec - mDec1.tv_usec > 30000)
             over30ms++;
-#ifdef CONFIG_MFC_PERF_ALOG
+#ifdef CONFIG_MFC_PERF_LOG
         ALOGI("SsbSipMfcDecExe] Time consumed for IOCTL_MFC_DEC_EXE = %8d", (1000000 + (mDec2.tv_usec - mDec1.tv_usec)));
 #endif
     }
@@ -511,7 +511,7 @@ void  *SsbSipMfcDecGetInBuf(void *openHandle, void **phyInBuf, int inputBufferSi
     struct mfc_common_args user_addr_arg, phys_addr_arg;
 
     if (inputBufferSize < 0) {
-        ALOGE("SsbSipMfcDecGetInBuf] inputBufferSize = %d is invalid", inputBufferSize);
+       ALOGE("SsbSipMfcDecGetInBuf] inputBufferSize = %d is invalid", inputBufferSize);
         return NULL;
     }
 
@@ -805,6 +805,71 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcDecGetConfig(void *openHandle, SSBSIP_MFC_DEC_CON
         return MFC_RET_DEC_GET_CONF_FAIL;
     }
 
+    return MFC_RET_OK;
+}
+
+void *SsbSipMfcDecAllocInputBuffer(void *openHandle, void **phyInBuf, int inputBufferSize)
+{
+    int ret_code;
+    _MFCLIB *pCTX;
+    struct mfc_common_args user_addr_arg, phys_addr_arg;
+
+    if (inputBufferSize < 0) {
+        ALOGE("SsbSipMfcDecAllocInputBuffer] inputBufferSize = %d is invalid\n", inputBufferSize);
+        return NULL;
+    }
+
+    if (openHandle == NULL) {
+        ALOGE("SsbSipMfcDecAllocInputBuffer] openHandle is NULL\n");
+        return NULL;
+    }
+
+    pCTX = (_MFCLIB *)openHandle;
+
+    user_addr_arg.args.mem_alloc.type = DECODER;
+    user_addr_arg.args.mem_alloc.buff_size = inputBufferSize;
+    user_addr_arg.args.mem_alloc.mapped_addr = pCTX->mapped_addr;
+    ret_code = ioctl(pCTX->hMFC, IOCTL_MFC_GET_IN_BUF, &user_addr_arg);
+    if (ret_code < 0) {
+        ALOGE("SsbSipMfcDecAllocInputBuffer] IOCTL_MFC_GET_IN_BUF failed");
+        return NULL;
+    }
+
+    phys_addr_arg.args.real_addr.key = user_addr_arg.args.mem_alloc.offset;
+    ret_code = ioctl(pCTX->hMFC, IOCTL_MFC_GET_REAL_ADDR, &phys_addr_arg);
+    if (ret_code < 0) {
+        ALOGE("SsbSipMfcDecGetInBuf] IOCTL_MFC_GET_PHYS_ADDR failed");
+        return NULL;
+    }
+
+    pCTX->virStrmBuf = pCTX->mapped_addr + user_addr_arg.args.mem_alloc.offset;
+    pCTX->phyStrmBuf = phys_addr_arg.args.real_addr.addr;
+    pCTX->sizeStrmBuf = inputBufferSize;
+    pCTX->inter_buff_status |= MFC_USE_STRM_BUFF;
+
+    *phyInBuf = (void *)pCTX->phyStrmBuf;
+
+    return (void *)pCTX->virStrmBuf;
+}
+
+void SsbSipMfcDecFreeInputBuffer(void *openHandle, void *phyInBuf)
+{
+    int ret;
+    _MFCLIB  *pCTX;
+    struct mfc_common_args free_arg;
+
+    if (openHandle == NULL) {
+        ALOGE("SsbSipMfcDecFreeInputBuffer] openHandle is NULL");
+        return MFC_RET_INVALID_PARAM;
+    }
+
+    pCTX = (_MFCLIB *)openHandle;
+
+    if (pCTX->inter_buff_status & MFC_USE_STRM_BUFF) {
+        free_arg.args.mem_free.key = pCTX->virStrmBuf;
+        ret = ioctl(pCTX->hMFC, IOCTL_MFC_FREE_BUF, &free_arg);
+    }
+    pCTX->inter_buff_status = MFC_USE_NONE;
     return MFC_RET_OK;
 }
 

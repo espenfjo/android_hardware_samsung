@@ -50,6 +50,17 @@
 static char *mfc_dev_name = SAMSUNG_MFC_DEV_NAME;
 static int mfc_dev_node = 7;
 
+#if defined (MFC5x_VERSION)
+#define H263_CTRL_NUM   19
+#define MPEG4_CTRL_NUM  27
+#define H264_CTRL_NUM   50
+#elif defined (MFC6x_VERSION)
+#define H263_CTRL_NUM   20
+#define MPEG4_CTRL_NUM  28
+#define H264_CTRL_NUM   67
+#endif
+
+
 static void getMFCName(char *devicename, int size)
 {
     snprintf(devicename, size, "%s%d", SAMSUNG_MFC_DEV_NAME, mfc_dev_node);
@@ -227,18 +238,17 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
     struct pollfd poll_events;
     int poll_state;
 
-    struct v4l2_ext_control ext_ctrl_mpeg4[28];
-    struct v4l2_ext_control ext_ctrl_h263[20];
-    struct v4l2_ext_control ext_ctrl[48];
+    struct v4l2_ext_control ext_ctrl_mpeg4[MPEG4_CTRL_NUM];
+    struct v4l2_ext_control ext_ctrl_h263[H263_CTRL_NUM];
+    struct v4l2_ext_control ext_ctrl[H264_CTRL_NUM];
     struct v4l2_ext_controls ext_ctrls;
 
     SSBSIP_MFC_ENC_H264_PARAM *h264_arg;
     SSBSIP_MFC_ENC_MPEG4_PARAM *mpeg4_arg;
     SSBSIP_MFC_ENC_H263_PARAM *h263_arg;
 
-    if (openHandle == NULL) {
+    if (openHandle == NULL)
         return MFC_RET_INVALID_PARAM;
-    }
 
     pCTX  = (_MFCLIB *) openHandle;
 
@@ -286,13 +296,23 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
         if (mpeg4_arg->SliceMode == 0) {
             ext_ctrl_mpeg4[5].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_MB;
             ext_ctrl_mpeg4[5].value = 1;  /* default */
+#if defined (MFC5x_VERSION)
+            ext_ctrl_mpeg4[6].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
+            ext_ctrl_mpeg4[6].value = 1900; /* default */
+#elif defined (MFC6x_VERSION)
             ext_ctrl_mpeg4[6].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
             ext_ctrl_mpeg4[6].value = 2800; /* based on MFC6.x */
+#endif
         } else if (mpeg4_arg->SliceMode == 1) {
             ext_ctrl_mpeg4[5].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_MB;
             ext_ctrl_mpeg4[5].value = mpeg4_arg->SliceArgument;
+#if defined (MFC5x_VERSION)
+            ext_ctrl_mpeg4[6].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
+            ext_ctrl_mpeg4[6].value = 1900; /* default */
+#elif defined (MFC6x_VERSION)
             ext_ctrl_mpeg4[6].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
             ext_ctrl_mpeg4[6].value = 2800; /* based on MFC6.x */
+#endif
         } else if (mpeg4_arg->SliceMode == 3) {
             ext_ctrl_mpeg4[5].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_MB;
             ext_ctrl_mpeg4[5].value = 1; /* default */
@@ -300,7 +320,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
             ext_ctrl_mpeg4[6].value = mpeg4_arg->SliceArgument;
         }
         /*
-        It should be set using mpeg4_arg->NumberBFrames after being handled by appl.
+         * It should be set using mpeg4_arg->NumberBFrames after being handled by appl.
          */
         ext_ctrl_mpeg4[7].id =  V4L2_CID_CODEC_MFC5X_ENC_MPEG4_B_FRAMES;
         ext_ctrl_mpeg4[7].value = mpeg4_arg->NumberBFrames;
@@ -359,8 +379,10 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
         ext_ctrl_mpeg4[26].id = V4L2_CID_CODEC_MFC5X_ENC_RC_FIXED_TARGET_BIT;
         ext_ctrl_mpeg4[26].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
 
+#if defined (MFC6x_VERSION)
         ext_ctrl_mpeg4[27].id = V4L2_CID_CODEC_MFC5X_ENC_MPEG4_RC_MB_ENABLE; /* MFC 6.x Only */
         ext_ctrl_mpeg4[27].value = mpeg4_arg->EnableMBRateControl;
+#endif
         break;
 
     case H263_ENC:
@@ -423,8 +445,10 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
         ext_ctrl_h263[18].id = V4L2_CID_CODEC_MFC5X_ENC_RC_FIXED_TARGET_BIT;
         ext_ctrl_h263[18].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
 
+#if defined (MFC6x_VERSION)
         ext_ctrl_h263[19].id = V4L2_CID_CODEC_MFC5X_ENC_H263_RC_MB_ENABLE; /* MFC 6.x Only */
         ext_ctrl_h263[19].value = h263_arg->EnableMBRateControl;
+#endif
         break;
 
     case H264_ENC:
@@ -443,13 +467,23 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
         if (h264_arg->SliceMode == 0) {
             ext_ctrl[6].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_MB;
             ext_ctrl[6].value = 1;  /* default */
+#if defined (MFC5x_VERSION)
+            ext_ctrl[7].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
+            ext_ctrl[7].value = 1900; /* default */
+#elif defined (MFC6x_VERSION)
             ext_ctrl[7].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
             ext_ctrl[7].value = 2800; /* based on MFC6.x */
+#endif
         } else if (h264_arg->SliceMode == 1) {
             ext_ctrl[6].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_MB;
             ext_ctrl[6].value = h264_arg->SliceArgument;
+#if defined (MFC5x_VERSION)
+            ext_ctrl[7].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
+            ext_ctrl[7].value = 1900; /* default */
+#elif defined (MFC6x_VERSION)
             ext_ctrl[7].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_BIT;
             ext_ctrl[7].value = 2800; /* based on MFC6.x */
+#endif
         } else if (h264_arg->SliceMode == 3) {
             ext_ctrl[6].id = V4L2_CID_CODEC_MFC5X_ENC_MULTI_SLICE_MB;
             ext_ctrl[6].value = 1; /* default */
@@ -457,7 +491,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
             ext_ctrl[7].value = h264_arg->SliceArgument;
         }
         /*
-        It should be set using h264_arg->NumberBFrames after being handled by appl.
+         * It should be set using h264_arg->NumberBFrames after being handled by appl.
          */
         ext_ctrl[8].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_B_FRAMES;
         ext_ctrl[8].value = h264_arg->NumberBFrames;
@@ -537,40 +571,155 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
         ext_ctrl[37].value = 0;
 
         ext_ctrl[38].id = V4L2_CID_CODEC_MFC5X_ENC_SEQ_HDR_MODE;
-        ext_ctrl[38].value = 0; /* 0: seperated header
-                                              1: header + first frame */
+        ext_ctrl[38].value = 0; /* 0: seperated header, 1: header + first frame */
 
-        ext_ctrl[39].id = V4L2_CID_CODEC_MFC5X_ENC_RC_FIXED_TARGET_BIT; /* MFC5.x Only */
-        ext_ctrl[39].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
-
-        ext_ctrl[40].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_AR_VUI_ENABLE;
-        ext_ctrl[40].value = V4L2_CODEC_MFC5X_ENC_SW_DISABLE;
-        ext_ctrl[41].id = V4L2_CID_CODEC_MFC5X_ENC_H264_AR_VUI_IDC;
+        ext_ctrl[39].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_AR_VUI_ENABLE;
+        ext_ctrl[39].value = V4L2_CODEC_MFC5X_ENC_SW_DISABLE;
+        ext_ctrl[40].id = V4L2_CID_CODEC_MFC5X_ENC_H264_AR_VUI_IDC;
+        ext_ctrl[40].value = 0;
+        ext_ctrl[41].id = V4L2_CID_CODEC_MFC5X_ENC_H264_EXT_SAR_WIDTH;
         ext_ctrl[41].value = 0;
-        ext_ctrl[42].id = V4L2_CID_CODEC_MFC5X_ENC_H264_EXT_SAR_WIDTH;
+        ext_ctrl[42].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_EXT_SAR_HEIGHT;
         ext_ctrl[42].value = 0;
-        ext_ctrl[43].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_EXT_SAR_HEIGHT;
-        ext_ctrl[43].value = 0;
 
         if (pCTX->hier_p_enable) {
-            ext_ctrl[44].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_HIER_P_ENABLE;
-            ext_ctrl[44].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
-            ext_ctrl[45].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER0_QP;
-            ext_ctrl[45].value = pCTX->hier_qp_value.t0_frame_qp;
-            ext_ctrl[46].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER1_QP;
-            ext_ctrl[46].value = pCTX->hier_qp_value.t2_frame_qp;
-            ext_ctrl[47].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER2_QP;
-            ext_ctrl[47].value = pCTX->hier_qp_value.t3_frame_qp;
+            ext_ctrl[43].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_HIER_P_ENABLE;
+            ext_ctrl[43].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
+            ext_ctrl[44].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER0_QP;
+            ext_ctrl[44].value = pCTX->hier_qp_value.t0_frame_qp;
+            ext_ctrl[45].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER1_QP;
+            ext_ctrl[45].value = pCTX->hier_qp_value.t2_frame_qp;
+            ext_ctrl[46].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER2_QP;
+            ext_ctrl[46].value = pCTX->hier_qp_value.t3_frame_qp;
         } else {
-            ext_ctrl[44].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_HIER_P_ENABLE;
-            ext_ctrl[44].value = V4L2_CODEC_MFC5X_ENC_SW_DISABLE;
-            ext_ctrl[45].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER0_QP;
+            ext_ctrl[43].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_HIER_P_ENABLE;
+            ext_ctrl[43].value = V4L2_CODEC_MFC5X_ENC_SW_DISABLE;
+            ext_ctrl[44].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER0_QP;
+            ext_ctrl[44].value = 0;
+            ext_ctrl[45].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER1_QP;
             ext_ctrl[45].value = 0;
-            ext_ctrl[46].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER1_QP;
+            ext_ctrl[46].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER2_QP;
             ext_ctrl[46].value = 0;
-            ext_ctrl[47].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_LAYER2_QP;
+            }
+#ifdef S3D_SUPPORT
+        if (pCTX->sei_info.sei_gen_enable) {
+            ext_ctrl[47].id =  V4L2_CID_CODEC_FRAME_PACK_FRM0_FLAG;
+            ext_ctrl[47].value = pCTX->sei_info.curr_frame_frm0_flag;
+            ext_ctrl[48].id =  V4L2_CID_CODEC_FRAME_PACK_ARRGMENT_TYPE;
+            ext_ctrl[48].value = pCTX->sei_info.frame_pack_arrgment_type;
+        } else {
+            ext_ctrl[47].id =  V4L2_CID_CODEC_FRAME_PACK_FRM0_FLAG;
             ext_ctrl[47].value = 0;
+            ext_ctrl[48].id =  V4L2_CID_CODEC_FRAME_PACK_ARRGMENT_TYPE;
+            ext_ctrl[48].value = 3;
         }
+#else
+        ext_ctrl[47].id =  V4L2_CID_CODEC_FRAME_PACK_FRM0_FLAG;
+        ext_ctrl[47].value = 0;
+        ext_ctrl[48].id =  V4L2_CID_CODEC_FRAME_PACK_ARRGMENT_TYPE;
+        ext_ctrl[48].value = 3;
+#endif
+#if defined (MFC5x_VERSION)
+        ext_ctrl[49].id = V4L2_CID_CODEC_MFC5X_ENC_RC_FIXED_TARGET_BIT; /* MFC5.x Only */
+        ext_ctrl[49].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
+#elif defined (MFC6x_VERSION)
+        if (pCTX->fmo_enable) {
+            ext_ctrl[49].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_ENABLE;
+            ext_ctrl[49].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
+            ext_ctrl[50].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_MAP_TYPE;
+            ext_ctrl[50].value = pCTX->fmo_value.slice_map_type;
+            ext_ctrl[51].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SLICE_NUM;
+            ext_ctrl[51].value = pCTX->fmo_value.slice_num_grp;
+            if (pCTX->fmo_value.slice_map_type == 0) {
+                ext_ctrl[52].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN1;
+                ext_ctrl[53].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN2;
+                ext_ctrl[54].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN3;
+                ext_ctrl[55].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN4;
+            for (i = 0; i < pCTX->fmo_value.slice_num_grp; i++)
+                ext_ctrl[52+i].value = pCTX->fmo_value.run_length[i];
+            for (i = pCTX->fmo_value.slice_num_grp; i < 4; i++);
+                ext_ctrl[52+i].value = 1;
+            } else {
+                ext_ctrl[52].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN1;
+                ext_ctrl[52].value = 1;
+                ext_ctrl[53].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN2;
+                ext_ctrl[53].value = 1;
+                ext_ctrl[54].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN3;
+                ext_ctrl[54].value = 1;
+                ext_ctrl[55].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN4;
+                ext_ctrl[55].value = 1;
+            }
+            if (pCTX->fmo_value.slice_map_type == 4 || pCTX->fmo_value.slice_map_type == 5) {
+                ext_ctrl[56].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SG_DIR;
+                ext_ctrl[56].value = pCTX->fmo_value.sg_dir;
+                ext_ctrl[57].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SG_RATE;
+                ext_ctrl[57].value = pCTX->fmo_value.sg_rate;
+            } else {
+                ext_ctrl[56].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SG_DIR;
+                ext_ctrl[56].value = 0;
+                ext_ctrl[57].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SG_RATE;
+                ext_ctrl[57].value = 1;
+            }
+        } else {
+            ext_ctrl[49].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_ENABLE;
+            ext_ctrl[49].value = V4L2_CODEC_MFC5X_ENC_SW_DISABLE;
+            ext_ctrl[50].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_MAP_TYPE;
+            ext_ctrl[50].value = 0;
+            ext_ctrl[51].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SLICE_NUM;
+            ext_ctrl[51].value = 1;
+            ext_ctrl[52].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN1;
+            ext_ctrl[52].value = 1;
+            ext_ctrl[53].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN2;
+            ext_ctrl[53].value = 1;
+            ext_ctrl[54].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN3;
+            ext_ctrl[54].value = 1;
+            ext_ctrl[55].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_RUN_LEN4;
+            ext_ctrl[55].value = 1;
+            ext_ctrl[56].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SG_DIR;
+            ext_ctrl[56].value = 0;
+            ext_ctrl[57].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_FMO_SG_RATE;
+            ext_ctrl[57].value = 1;
+        }
+        if (pCTX->aso_enable) {
+            ext_ctrl[58].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_ENABLE;
+            ext_ctrl[58].value = V4L2_CODEC_MFC5X_ENC_SW_ENABLE;
+            ext_ctrl[59].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_0;
+            ext_ctrl[59].value = pCTX->aso_sl_order[0];
+            ext_ctrl[60].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_1;
+            ext_ctrl[60].value = pCTX->aso_sl_order[1];
+            ext_ctrl[61].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_2;
+            ext_ctrl[61].value = pCTX->aso_sl_order[2];
+            ext_ctrl[62].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_3;
+            ext_ctrl[62].value = pCTX->aso_sl_order[3];
+            ext_ctrl[63].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_4;
+            ext_ctrl[63].value = pCTX->aso_sl_order[4];
+            ext_ctrl[64].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_5;
+            ext_ctrl[64].value = pCTX->aso_sl_order[5];
+            ext_ctrl[65].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_6;
+            ext_ctrl[65].value = pCTX->aso_sl_order[6];
+            ext_ctrl[66].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_7;
+            ext_ctrl[66].value = pCTX->aso_sl_order[7];
+        } else {
+            ext_ctrl[58].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_ENABLE;
+            ext_ctrl[58].value = V4L2_CODEC_MFC5X_ENC_SW_DISABLE;
+            ext_ctrl[59].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_0;
+            ext_ctrl[59].value = 0;
+            ext_ctrl[60].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_1;
+            ext_ctrl[60].value = 0;
+            ext_ctrl[61].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_2;
+            ext_ctrl[61].value = 0;
+            ext_ctrl[62].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_3;
+            ext_ctrl[62].value = 0;
+            ext_ctrl[63].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_4;
+            ext_ctrl[63].value = 0;
+            ext_ctrl[64].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_5;
+            ext_ctrl[64].value = 0;
+            ext_ctrl[65].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_6;
+            ext_ctrl[65].value = 0;
+            ext_ctrl[66].id =  V4L2_CID_CODEC_MFC5X_ENC_H264_ASO_SL_ORDER_7;
+            ext_ctrl[66].value = 0;
+        }
+#endif
         break;
 
     default:
@@ -581,13 +730,13 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
 
     ext_ctrls.ctrl_class = V4L2_CTRL_CLASS_CODEC;
     if (pCTX->codecType == MPEG4_ENC) {
-        ext_ctrls.count = 28;
+        ext_ctrls.count = MPEG4_CTRL_NUM;
         ext_ctrls.controls = ext_ctrl_mpeg4;
     } else if (pCTX->codecType == H264_ENC) {
-        ext_ctrls.count = 48;
+        ext_ctrls.count = H264_CTRL_NUM;
         ext_ctrls.controls = ext_ctrl;
     } else if (pCTX->codecType == H263_ENC) {
-        ext_ctrls.count = 20;
+        ext_ctrls.count = H263_CTRL_NUM;
         ext_ctrls.controls = ext_ctrl_h263;
     }
 
@@ -623,11 +772,12 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
     }
 #else   /* FIXME: */
     if (NV12_TILE == pCTX->framemap) {
-        fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12MT; /* 4:2:0, 2 Planes, 16x16 Tiles */
+        fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12MT_16X16; /* 4:2:0, 2 Planes, 16x16 Tiles */
     } else { /* NV12_LINEAR (default) */
         fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12M; /* 4:2:0, 2 Planes, linear */
     }
 #endif
+
     ret = ioctl(pCTX->hMFC, VIDIOC_S_FMT, &fmt);
     if (ret != 0) {
         ALOGE("[%s] S_FMT failed on MFC output stream",__func__);
@@ -845,7 +995,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
     } while (1 == poll_state);
 
     pCTX->v4l2_enc.mfc_dst_bufs_bytes_used_len = buf.m.planes[0].bytesused;
-    pCTX->virStrmBuf = pCTX->v4l2_enc.mfc_dst_bufs[buf.index];
+    pCTX->virStrmBuf = (unsigned int)pCTX->v4l2_enc.mfc_dst_bufs[buf.index];
 
     /* stream dequeued index */
     index = buf.index;
@@ -865,6 +1015,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncInit(void *openHandle, void *param)
     ALOGV("[%s] Strm out idx %d",__func__,index);
 
     return MFC_RET_OK;
+
 error_case3:
     for (j = 0; j < i; j++)
         munmap(pCTX->v4l2_enc.mfc_dst_bufs[j], pCTX->v4l2_enc.mfc_dst_bufs_len);
@@ -1205,7 +1356,7 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncExe(void *openHandle)
     pCTX->v4l2_enc.mfc_src_buf_flags[qbuf.index] = BUF_DEQUEUED;
 
     /* Update context stream buffer address */
-    pCTX->virStrmBuf = pCTX->v4l2_enc.mfc_dst_bufs[dequeued_index];
+    pCTX->virStrmBuf = (unsigned int)pCTX->v4l2_enc.mfc_dst_bufs[dequeued_index];
     ALOGV("[%s] Strm out idx %d",__func__,dequeued_index);
 
     return MFC_RET_OK;
@@ -1216,7 +1367,12 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncSetConfig(void *openHandle, SSBSIP_MFC_ENC_CON
     _MFCLIB *pCTX;
     struct v4l2_control ctrl;
     struct mfc_enc_hier_p_qp hier_p_qp;
-    int ret;
+#ifdef S3D_SUPPORT
+    SSBSIP_MFC_FRAME_PACKING *frame_packing;
+#endif
+    struct mfc_enc_fmo fmo_param;
+    int *aso_param;
+    int ret, i;
 
     if (openHandle == NULL) {
         ALOGE("[%s] openHandle is NULL\n",__func__);
@@ -1254,7 +1410,13 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncSetConfig(void *openHandle, SSBSIP_MFC_ENC_CON
         ctrl.id = V4L2_CID_CODEC_ENCODED_BIT_RATE_CH;
         ctrl.value = *((unsigned int*)value);
         break;
-
+#ifdef S3D_SUPPORT
+    case MFC_ENC_SETCONF_SEI_GEN:
+        ctrl.id = V4L2_CID_CODEC_FRAME_PACK_SEI_GEN;
+        ctrl.value = *((unsigned int*)value);
+        pCTX->sei_info.sei_gen_enable = 1;
+        break;
+#endif
     case MFC_ENC_SETCONF_ALLOW_FRAME_SKIP:
         pCTX->enc_frameskip = *((int *)value);
         return MFC_RET_OK;
@@ -1271,6 +1433,32 @@ SSBSIP_MFC_ERROR_CODE SsbSipMfcEncSetConfig(void *openHandle, SSBSIP_MFC_ENC_CON
         pCTX->hier_qp_value.t0_frame_qp = (int)(hier_p_qp.t0_frame_qp);
         pCTX->hier_qp_value.t2_frame_qp  = (int)(hier_p_qp.t2_frame_qp);
         pCTX->hier_qp_value.t3_frame_qp  = (int)(hier_p_qp.t3_frame_qp);
+        return MFC_RET_OK;
+#ifdef S3D_SUPPORT
+    case MFC_ENC_SETCONF_FRAME_PACKING:
+        frame_packing = (SSBSIP_MFC_FRAME_PACKING *)value;
+        pCTX->sei_info.curr_frame_frm0_flag = (int)(frame_packing->current_frame_is_frame0_flag);
+        pCTX->sei_info.frame_pack_arrgment_type  = (int)(frame_packing->arrangement_type);
+        return MFC_RET_OK;
+#endif
+    case MFC_ENC_SETCONF_FMO:
+        fmo_param = *((struct mfc_enc_fmo *) value);
+        pCTX->fmo_enable = 1;
+        pCTX->fmo_value.slice_map_type = (int)(fmo_param.slice_map_type);
+        pCTX->fmo_value.slice_num_grp  = (int)(fmo_param.slice_num_grp);
+        pCTX->fmo_value.run_length[0]  = (int)(fmo_param.run_length[0]);
+        pCTX->fmo_value.run_length[1]  = (int)(fmo_param.run_length[1]);
+        pCTX->fmo_value.run_length[2]  = (int)(fmo_param.run_length[2]);
+        pCTX->fmo_value.run_length[3]  = (int)(fmo_param.run_length[3]);
+        pCTX->fmo_value.sg_dir         = (int)(fmo_param.sg_dir);
+        pCTX->fmo_value.sg_rate        = (int)(fmo_param.sg_rate);
+        return MFC_RET_OK;
+
+    case MFC_ENC_SETCONF_ASO:
+        aso_param = (int *) value;
+        pCTX->aso_enable = 1;
+        for (i = 0; i < 8; i++)
+            pCTX->aso_sl_order[i] = (int)aso_param[i];
         return MFC_RET_OK;
 
     default:

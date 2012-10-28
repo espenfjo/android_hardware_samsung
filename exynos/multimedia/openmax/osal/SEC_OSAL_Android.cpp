@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include <ui/GraphicBuffer.h>
 #include <ui/GraphicBufferMapper.h>
 #include <ui/Rect.h>

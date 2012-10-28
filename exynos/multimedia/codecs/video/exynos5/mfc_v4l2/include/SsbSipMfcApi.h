@@ -30,6 +30,8 @@
 #define MAX_DECODER_INPUT_BUFFER_SIZE  (1024 * 3072)
 #define MAX_ENCODER_OUTPUT_BUFFER_SIZE (1024 * 3072)
 
+#define MFC6x_VERSION
+
 #define SUPPORT_1080P        1
 
 #if SUPPORT_1080P
@@ -59,7 +61,9 @@ typedef enum {
     FIMV2_DEC,
     FIMV3_DEC,
     FIMV4_DEC,
+#if defined (MFC6x_VERSION)
     VP8_DEC,
+#endif
     H264_ENC,
     MPEG4_ENC,
     H263_ENC,
@@ -74,8 +78,14 @@ typedef enum {
 
 typedef enum {
     NV12_LINEAR = 0,
-    NV12_TILE
+    NV12_TILE,
+    NV21_LINEAR
 } SSBSIP_MFC_INSTRM_MODE_TYPE;
+
+typedef enum {
+    FRAME = 0,
+    SLICE,
+} SSBSIP_MFC_OUTSTRM_MODE_TYPE;
 
 typedef enum {
     NO_CACHE = 0,
@@ -100,7 +110,12 @@ typedef enum {
     MFC_DEC_SETCONF_IMMEDIATELY_DISPLAY,
     MFC_DEC_SETCONF_DPB_FLUSH,
     MFC_DEC_SETCONF_PIXEL_CACHE,
-    MFC_DEC_GETCONF_WIDTH_HEIGHT
+    MFC_DEC_GETCONF_WIDTH_HEIGHT,
+#ifdef S3D_SUPPORT
+    /* S3D specific feature */
+    MFC_DEC_SETCONF_SEI_PARSE,
+    MFC_DEC_GETCONF_FRAME_PACKING
+#endif
 } SSBSIP_MFC_DEC_CONF;
 
 typedef enum {
@@ -114,7 +129,14 @@ typedef enum {
     /* C210 specific feature */
     MFC_ENC_SETCONF_VUI_INFO,
     MFC_ENC_SETCONF_I_PERIOD,
-    MFC_ENC_SETCONF_HIER_P
+    MFC_ENC_SETCONF_HIER_P,
+#ifdef S3D_SUPPORT
+    /* S3D Specific feature */
+    MFC_ENC_SETCONF_SEI_GEN,
+    MFC_ENC_SETCONF_FRAME_PACKING,
+#endif
+    MFC_ENC_SETCONF_FMO,
+    MFC_ENC_SETCONF_ASO,
 } SSBSIP_MFC_ENC_CONF;
 
 typedef enum {
@@ -218,24 +240,25 @@ typedef struct {
 
 typedef struct {
     /* common parameters */
-    SSBSIP_MFC_CODEC_TYPE codecType;    /* [IN] codec type */
-    int SourceWidth;                    /* [IN] width of video to be encoded */
-    int SourceHeight;                   /* [IN] height of video to be encoded */
-    int IDRPeriod;                      /* [IN] GOP number(interval of I-frame) */
-    int SliceMode;                      /* [IN] Multi slice mode */
-    int RandomIntraMBRefresh;           /* [IN] cyclic intra refresh */
-    int EnableFRMRateControl;           /* [IN] frame based rate control enable */
-    int Bitrate;                        /* [IN] rate control parameter(bit rate) */
-    int FrameQp;                        /* [IN] The quantization parameter of the frame */
-    int FrameQp_P;                      /* [IN] The quantization parameter of the P frame */
-    int QSCodeMax;                      /* [IN] Maximum Quantization value */
-    int QSCodeMin;                      /* [IN] Minimum Quantization value */
-    int CBRPeriodRf;                    /* [IN] Reaction coefficient parameter for rate control */
-    int PadControlOn;                   /* [IN] Enable padding control */
-    int LumaPadVal;                     /* [IN] Luma pel value used to fill padding area */
-    int CbPadVal;                       /* [IN] CB pel value used to fill padding area */
-    int CrPadVal;                       /* [IN] CR pel value used to fill padding area */
-    int FrameMap;                       /* [IN] Encoding input mode(tile mode or linear mode) */
+    SSBSIP_MFC_CODEC_TYPE codecType;            /* [IN] codec type */
+    int SourceWidth;                            /* [IN] width of video to be encoded */
+    int SourceHeight;                           /* [IN] height of video to be encoded */
+    int IDRPeriod;                              /* [IN] GOP number(interval of I-frame) */
+    int SliceMode;                              /* [IN] Multi slice mode */
+    int RandomIntraMBRefresh;                   /* [IN] cyclic intra refresh */
+    int EnableFRMRateControl;                   /* [IN] frame based rate control enable */
+    int Bitrate;                                /* [IN] rate control parameter(bit rate) */
+    int FrameQp;                                /* [IN] The quantization parameter of the frame */
+    int FrameQp_P;                              /* [IN] The quantization parameter of the P frame */
+    int QSCodeMax;                              /* [IN] Maximum Quantization value */
+    int QSCodeMin;                              /* [IN] Minimum Quantization value */
+    int CBRPeriodRf;                            /* [IN] Reaction coefficient parameter for rate control */
+    int PadControlOn;                           /* [IN] Enable padding control */
+    int LumaPadVal;                             /* [IN] Luma pel value used to fill padding area */
+    int CbPadVal;                               /* [IN] CB pel value used to fill padding area */
+    int CrPadVal;                               /* [IN] CR pel value used to fill padding area */
+    int FrameMap;                               /* [IN] Encoding input mode(tile mode or linear mode) */
+    SSBSIP_MFC_OUTSTRM_MODE_TYPE OutputMode;    /* [IN] Output mode: Frame/Slice */
 
     /* H.264 specific parameters */
     int ProfileIDC;                     /* [IN] profile */
@@ -261,25 +284,28 @@ typedef struct {
 
 typedef struct {
     /* common parameters */
-    SSBSIP_MFC_CODEC_TYPE codecType;    /* [IN] codec type */
-    int SourceWidth;                    /* [IN] width of video to be encoded */
-    int SourceHeight;                   /* [IN] height of video to be encoded */
-    int IDRPeriod;                      /* [IN] GOP number(interval of I-frame) */
-    int SliceMode;                      /* [IN] Multi slice mode */
-    int RandomIntraMBRefresh;           /* [IN] cyclic intra refresh */
-    int EnableFRMRateControl;           /* [IN] frame based rate control enable */
-    int Bitrate;                        /* [IN] rate control parameter(bit rate) */
-    int FrameQp;                        /* [IN] The quantization parameter of the frame */
-    int FrameQp_P;                      /* [IN] The quantization parameter of the P frame */
-    int QSCodeMax;                      /* [IN] Maximum Quantization value */
-    int QSCodeMin;                      /* [IN] Minimum Quantization value */
-    int CBRPeriodRf;                    /* [IN] Reaction coefficient parameter for rate control */
-    int PadControlOn;                   /* [IN] Enable padding control */
-    int LumaPadVal;                     /* [IN] Luma pel value used to fill padding area */
-    int CbPadVal;                       /* [IN] CB pel value used to fill padding area */
-    int CrPadVal;                       /* [IN] CR pel value used to fill padding area */
-    int FrameMap;                       /* [IN] Encoding input mode(tile mode or linear mode) */
-    int EnableMBRateControl;            /* [IN] Enable macroblock-level rate control, MFC6.x Only */
+    SSBSIP_MFC_CODEC_TYPE codecType;            /* [IN] codec type */
+    int SourceWidth;                            /* [IN] width of video to be encoded */
+    int SourceHeight;                           /* [IN] height of video to be encoded */
+    int IDRPeriod;                              /* [IN] GOP number(interval of I-frame) */
+    int SliceMode;                              /* [IN] Multi slice mode */
+    int RandomIntraMBRefresh;                   /* [IN] cyclic intra refresh */
+    int EnableFRMRateControl;                   /* [IN] frame based rate control enable */
+    int Bitrate;                                /* [IN] rate control parameter(bit rate) */
+    int FrameQp;                                /* [IN] The quantization parameter of the frame */
+    int FrameQp_P;                              /* [IN] The quantization parameter of the P frame */
+    int QSCodeMax;                              /* [IN] Maximum Quantization value */
+    int QSCodeMin;                              /* [IN] Minimum Quantization value */
+    int CBRPeriodRf;                            /* [IN] Reaction coefficient parameter for rate control */
+    int PadControlOn;                           /* [IN] Enable padding control */
+    int LumaPadVal;                             /* [IN] Luma pel value used to fill padding area */
+    int CbPadVal;                               /* [IN] CB pel value used to fill padding area */
+    int CrPadVal;                               /* [IN] CR pel value used to fill padding area */
+    int FrameMap;                               /* [IN] Encoding input mode(tile mode or linear mode) */
+    SSBSIP_MFC_OUTSTRM_MODE_TYPE OutputMode;    /* [IN] Output mode: Frame/Slice */
+#if defined (MFC6x_VERSION)
+    int EnableMBRateControl;                    /* [IN] Enable macroblock-level rate control, MFC6.x Only */
+#endif
 
     /* MPEG4 specific parameters */
     int ProfileIDC;                     /* [IN] profile */
@@ -294,25 +320,27 @@ typedef struct {
 
 typedef struct {
     /* common parameters */
-    SSBSIP_MFC_CODEC_TYPE codecType;    /* [IN] codec type */
-    int SourceWidth;                    /* [IN] width of video to be encoded */
-    int SourceHeight;                   /* [IN] height of video to be encoded */
-    int IDRPeriod;                      /* [IN] GOP number(interval of I-frame) */
-    int SliceMode;                      /* [IN] Multi slice mode */
-    int RandomIntraMBRefresh;           /* [IN] cyclic intra refresh */
-    int EnableFRMRateControl;           /* [IN] frame based rate control enable */
-    int Bitrate;                        /* [IN] rate control parameter(bit rate) */
-    int FrameQp;                        /* [IN] The quantization parameter of the frame */
-    int FrameQp_P;                      /* [IN] The quantization parameter of the P frame */
-    int QSCodeMax;                      /* [IN] Maximum Quantization value */
-    int QSCodeMin;                      /* [IN] Minimum Quantization value */
-    int CBRPeriodRf;                    /* [IN] Reaction coefficient parameter for rate control */
-    int PadControlOn;                   /* [IN] Enable padding control */
-    int LumaPadVal;                     /* [IN] Luma pel value used to fill padding area */
-    int CbPadVal;                       /* [IN] CB pel value used to fill padding area */
-    int CrPadVal;                       /* [IN] CR pel value used to fill padding area */
-    int FrameMap;                       /* [IN] Encoding input mode(tile mode or linear mode) */
-    int EnableMBRateControl;            /* [IN] Enable macroblock-level rate control, MFC6.x Only */
+    SSBSIP_MFC_CODEC_TYPE codecType;            /* [IN] codec type */
+    int SourceWidth;                            /* [IN] width of video to be encoded */
+    int SourceHeight;                           /* [IN] height of video to be encoded */
+    int IDRPeriod;                              /* [IN] GOP number(interval of I-frame) */
+    int SliceMode;                              /* [IN] Multi slice mode */
+    int RandomIntraMBRefresh;                   /* [IN] cyclic intra refresh */
+    int EnableFRMRateControl;                   /* [IN] frame based rate control enable */
+    int Bitrate;                                /* [IN] rate control parameter(bit rate) */
+    int FrameQp;                                /* [IN] The quantization parameter of the frame */
+    int FrameQp_P;                              /* [IN] The quantization parameter of the P frame */
+    int QSCodeMax;                              /* [IN] Maximum Quantization value */
+    int QSCodeMin;                              /* [IN] Minimum Quantization value */
+    int CBRPeriodRf;                            /* [IN] Reaction coefficient parameter for rate control */
+    int PadControlOn;                           /* [IN] Enable padding control */
+    int LumaPadVal;                             /* [IN] Luma pel value used to fill padding area */
+    int CbPadVal;                               /* [IN] CB pel value used to fill padding area */
+    int CrPadVal;                               /* [IN] CR pel value used to fill padding area */
+    int FrameMap;                               /* [IN] Encoding input mode(tile mode or linear mode) */
+#if defined (MFC6x_VERSION)
+    int EnableMBRateControl;                    /* [IN] Enable macroblock-level rate control, MFC6.x Only */
+#endif
 
     /* H.263 specific parameters */
     int FrameRate;                      /* [IN] rate control parameter(frame rate) */
@@ -331,6 +359,25 @@ typedef struct {
     int crop_left_offset;
     int crop_right_offset;
 } SSBSIP_MFC_CROP_INFORMATION;
+
+#ifdef S3D_SUPPORT
+typedef struct {
+    int           available;
+    unsigned int  arrangement_id;
+    int           arrangement_cancel_flag;
+    unsigned char arrangement_type;
+    int           quincunx_sampling_flag;
+    unsigned char content_interpretation_type;
+    int           spatial_flipping_flag;
+    int           frame0_flipped_flag;
+    int           field_views_flag;
+    int           current_frame_is_frame0_flag;
+    unsigned char frame0_grid_pos_x;
+    unsigned char frame0_grid_pos_y;
+    unsigned char frame1_grid_pos_x;
+    unsigned char frame1_grid_pos_y;
+} SSBSIP_MFC_FRAME_PACKING;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

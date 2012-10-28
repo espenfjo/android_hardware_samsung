@@ -14,6 +14,7 @@ LOCAL_C_INCLUDES := $(SEC_OMX_INC)/khronos \
 	$(SEC_OMX_TOP)/core \
 	$(SEC_OMX_COMPONENT)/common \
 	$(SEC_OMX_COMPONENT)/audio/dec \
+	$(EXYNOS_AUDIO_CODEC)/alp/include \
 	$(TARGET_OUT_HEADERS)/$(SEC_COPY_HEADERS_TO)
 
 include $(BUILD_STATIC_LIBRARY)

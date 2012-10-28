@@ -129,6 +129,8 @@ struct mfc_enc_init_common_arg {
 
     unsigned int in_pixelcache;
 
+    SSBSIP_MFC_OUTSTRM_MODE_TYPE in_output_mode;
+
     unsigned int in_mapped_addr;
     struct mfc_strm_ref_buf_arg out_u_addr;
     struct mfc_strm_ref_buf_arg out_p_addr;
@@ -516,6 +518,8 @@ typedef struct
 
     /* to support non-blocking mode */
     unsigned int encode_cnt;
+
+    SSBSIP_MFC_INSTRM_MODE_TYPE framemap;
 } _MFCLIB;
 
 #define ENC_PROFILE_LEVEL(profile, level)      ((profile) | ((level) << 8))
