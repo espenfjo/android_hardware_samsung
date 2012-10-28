@@ -1071,6 +1071,7 @@ static int runFimcCore(struct hwc_context_t *ctx,
     case HAL_PIXEL_FORMAT_CUSTOM_YCbCr_420_SP_TILED:
     case HAL_PIXEL_FORMAT_CUSTOM_YCbCr_422_SP:
     case HAL_PIXEL_FORMAT_CUSTOM_YCrCb_422_SP:
+        ALOGE("helper HAL_PIXEL_FORMAT_CUSTOM_YCrCb_422_SP");            
         /* for video contents zero copy case */
         fimc_src_buf.base[0] = params->src.buf_addr_phy_rgb_y;
         fimc_src_buf.base[1] = params->src.buf_addr_phy_cb;
@@ -1083,16 +1084,23 @@ static int runFimcCore(struct hwc_context_t *ctx,
     case HAL_PIXEL_FORMAT_RGB_565:
     case HAL_PIXEL_FORMAT_YV12:
     default:
-        if (src_img->format == HAL_PIXEL_FORMAT_YV12)
+        ALOGE("runfimccore default");            
+
+        if (src_img->format == HAL_PIXEL_FORMAT_YV12){
+            ALOGE("HAL_PIXEL_FORMAT_YV12 in the thing here yes.....");
             src_cbcr_order = false;
+        }
 
         if (src_img->usage & GRALLOC_USAGE_HW_FIMC1) {
+            ALOGE("GRALLOC_USAGE_HW_FIMC1 in the thing here yes.....");            
             fimc_src_buf.base[0] = params->src.buf_addr_phy_rgb_y;
             if (src_cbcr_order == true) {
+                ALOGE("GRALLOC_USAGE_HW_FIMC1 + true on that thing");            
                 fimc_src_buf.base[1] = params->src.buf_addr_phy_cb;
                 fimc_src_buf.base[2] = params->src.buf_addr_phy_cr;
             }
             else {
+                ALOGE("GRALLOC_USAGE_HW_FIMC1 + false on that thing");            
                 fimc_src_buf.base[2] = params->src.buf_addr_phy_cb;
                 fimc_src_buf.base[1] = params->src.buf_addr_phy_cr;
             }
@@ -1107,6 +1115,7 @@ static int runFimcCore(struct hwc_context_t *ctx,
      *    - stream on => queue => dequeue => stream off => clear buf
      */
     if (fimc_handle_oneshot(fimc->dev_fd, &fimc_src_buf, NULL) < 0) {
+        ALOGE("fimcrun fail");            
         fimc_v4l2_clr_buf(fimc->dev_fd, V4L2_BUF_TYPE_OUTPUT);
         return -1;
     }
