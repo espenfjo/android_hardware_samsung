@@ -17,8 +17,8 @@
 /*
  *
  * @author Rama, Meka(v.meka@samsung.com)
-           Sangwoo, Park(sw5771.park@samsung.com)
-           Jamie, Oh (jung-min.oh@samsung.com)
+	   Sangwoo, Park(sw5771.park@samsung.com)
+	   Jamie, Oh (jung-min.oh@samsung.com)
  * @date   2011-03-11
  *
  */
@@ -35,11 +35,12 @@
 #include <cutils/log.h>
 
 #include <linux/videodev.h>
+#include "videodev2.h"
 #include "s5p_fimc.h"
 #include "sec_utils.h"
-
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <hardware/gralloc.h>
 
 #include "linux/fb.h"
@@ -47,7 +48,7 @@
 #include "s3c_lcd.h"
 #include "sec_format.h"
 
-//#define HWC_DEBUG
+#define HWC_DEBUG 1
 #if defined(BOARD_USES_FIMGAPI)
 #include "sec_g2d.h"
 #endif
@@ -56,7 +57,7 @@
 
 #ifdef SKIP_DUMMY_UI_LAY_DRAWING
 #define GL_WA_OVLY_ALL
-#define THRES_FOR_SWAP  (1800)    /* 60sec in Frames. 30fps * 60 = 1800 */
+#define THRES_FOR_SWAP  (3427)    /* 60sec in Frames. 57fps * 60 = 3427 */
 #endif
 
 #define NUM_OF_DUMMY_WIN    (4)
@@ -77,6 +78,8 @@
 #ifdef SAMSUNG_EXYNOS4210
 #define PP_DEVICE_DEV_NAME  "/dev/video1"
 #endif
+/* cacheable configuration */
+#define V4L2_CID_CACHEABLE			(V4L2_CID_BASE+40)
 
 struct sec_rect {
     int32_t x;
@@ -149,7 +152,7 @@ struct hwc_ui_lay_info{
 #endif
 
 struct hwc_context_t {
-    hwc_composer_device_t device;
+    hwc_composer_device_1_t device;
 
     /* our private state goes below here */
     struct hwc_win_info_t     win[NUM_OF_WIN];
@@ -164,6 +167,10 @@ struct hwc_context_t {
 
     struct fb_var_screeninfo  lcd_info;
     s5p_fimc_t                fimc;
+    hwc_procs_t               *procs;
+    pthread_t                 uevent_thread;
+    pthread_t                 vsync_thread;
+
     int                       num_of_fb_layer;
     int                       num_of_hwc_layer;
     int                       num_of_fb_layer_prev;
@@ -191,8 +198,8 @@ typedef enum _LOG_LEVEL {
 #else
 #define SEC_HWC_Log(a, ...)                                         \
     do {                                                            \
-        if (a == HWC_LOG_ERROR)                                     \
-            ((void)_SEC_HWC_Log(a, SEC_HWC_LOG_TAG, __VA_ARGS__)); \
+	if (a == HWC_LOG_ERROR)                                     \
+	    ((void)_SEC_HWC_Log(a, SEC_HWC_LOG_TAG, __VA_ARGS__)); \
     } while (0)
 #endif
 
@@ -276,9 +283,9 @@ int window_get_global_lcd_info(int fd, struct fb_var_screeninfo *lcd_info);
 int createFimc (s5p_fimc_t *fimc);
 int destroyFimc(s5p_fimc_t *fimc);
 int runFimc(struct hwc_context_t *ctx,
-            struct sec_img *src_img, struct sec_rect *src_rect,
-            struct sec_img *dst_img, struct sec_rect *dst_rect,
-            uint32_t transform);
+	    struct sec_img *src_img, struct sec_rect *src_rect,
+	    struct sec_img *dst_img, struct sec_rect *dst_rect,
+	    uint32_t transform);
 int check_yuv_format(unsigned int color_format);
 
 #endif /* ANDROID_SEC_HWC_UTILS_H_*/

@@ -25,7 +25,6 @@
  */
 
 #include "SecHWCUtils.h"
-
 #define V4L2_BUF_TYPE_OUTPUT V4L2_BUF_TYPE_VIDEO_OUTPUT
 #define V4L2_BUF_TYPE_CAPTURE V4L2_BUF_TYPE_VIDEO_CAPTURE
 
@@ -35,7 +34,7 @@
 #ifdef CHECK_FPS
 #include <sys/time.h>
 #include <unistd.h>
-#define CHK_FRAME_CNT 30
+#define CHK_FRAME_CNT 57
 
 void check_fps()
 {
@@ -1084,8 +1083,9 @@ static int runFimcCore(struct hwc_context_t *ctx,
     case HAL_PIXEL_FORMAT_RGB_565:
     case HAL_PIXEL_FORMAT_YV12:
     default:
-        if (src_img->format == HAL_PIXEL_FORMAT_YV12)
+        if (src_img->format == HAL_PIXEL_FORMAT_YV12){
             src_cbcr_order = false;
+        }
 
         if (src_img->usage & GRALLOC_USAGE_HW_FIMC1) {
             fimc_src_buf.base[0] = params->src.buf_addr_phy_rgb_y;
@@ -1108,6 +1108,7 @@ static int runFimcCore(struct hwc_context_t *ctx,
      *    - stream on => queue => dequeue => stream off => clear buf
      */
     if (fimc_handle_oneshot(fimc->dev_fd, &fimc_src_buf, NULL) < 0) {
+        ALOGE("fimcrun fail");            
         fimc_v4l2_clr_buf(fimc->dev_fd, V4L2_BUF_TYPE_OUTPUT);
         return -1;
     }

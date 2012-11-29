@@ -164,5 +164,19 @@ sp<ISecTVOut> SecHdmiClient::m_getSecTVOutService(void)
     }
     return g_SecTVOutService;
 }
-
+void SecHdmiClient::setVideoRotation(int rotation){}
+void SecHdmiClient::setForceMirrorMode(int mode){}
+void SecHdmiClient::setVideoMode(int mode){}
+void SecHdmiClient::setMirrorWithVideoMode(int mode){}
+void SecHdmiClient::disableLayer(unsigned int disable){}
+void SecHdmiClient::setHdmiResolution(int resolution){}
+int SecHdmiClient::getHdmiResolution(){
+    return 0;
+}
+int SecHdmiClient::getVideoMode(){
+    return 0;
+}
+int SecHdmiClient::getHdmiAudioChannel(){
+    return 0;
+}
 }

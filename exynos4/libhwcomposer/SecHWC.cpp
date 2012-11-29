@@ -27,6 +27,8 @@
 #include <cutils/atomic.h>
 
 #include <EGL/egl.h>
+#include <sys/prctl.h>
+#include <fcntl.h>
 
 #include "SecHWCUtils.h"
 
@@ -63,7 +65,7 @@ static struct hw_module_methods_t hwc_module_methods = {
 hwc_module_t HAL_MODULE_INFO_SYM = {
     common: {
         tag: HARDWARE_MODULE_TAG,
-        version_major: 1,
+        version_major: 2,
         version_minor: 0,
         id: HWC_HARDWARE_MODULE_ID,
         name: "Samsung S5PC21X hwcomposer module",
@@ -74,8 +76,8 @@ hwc_module_t HAL_MODULE_INFO_SYM = {
 
 /*****************************************************************************/
 
-static void dump_layer(hwc_layer_t const* l) {
-    ALOGD("\ttype=%d, flags=%08x, handle=%p, tr=%02x, blend=%04x, "
+static void dump_layer(hwc_layer_1_t const* l) {
+    SEC_HWC_Log(HWC_LOG_DEBUG,"\ttype=%d, flags=%08x, handle=%p, tr=%02x, blend=%04x, "
             "{%d,%d,%d,%d}, {%d,%d,%d,%d}",
             l->compositionType, l->flags, l->handle, l->transform, l->blending,
             l->sourceCrop.left,
@@ -88,7 +90,7 @@ static void dump_layer(hwc_layer_t const* l) {
             l->displayFrame.bottom);
 }
 
-void calculate_rect(struct hwc_win_info_t *win, hwc_layer_t *cur,
+void calculate_rect(struct hwc_win_info_t *win, hwc_layer_1_t *cur,
         sec_rect *rect)
 {
     rect->x = cur->displayFrame.left;
@@ -118,7 +120,7 @@ void calculate_rect(struct hwc_win_info_t *win, hwc_layer_t *cur,
     }
 }
 
-static int set_src_dst_img_rect(hwc_layer_t *cur,
+static int set_src_dst_img_rect(hwc_layer_1_t *cur,
         struct hwc_win_info_t *win,
         struct sec_img *src_img,
         struct sec_img *dst_img,
@@ -301,7 +303,7 @@ static int set_src_dst_img_rect(hwc_layer_t *cur,
     return 0;
 }
 
-static int get_hwc_compos_decision(hwc_layer_t* cur, int iter, int win_cnt)
+static int get_hwc_compos_decision(hwc_layer_1_t* cur, int iter, int win_cnt)
 {
     if(cur->flags & HWC_SKIP_LAYER  || !cur->handle) {
         SEC_HWC_Log(HWC_LOG_DEBUG, "%s::is_skip_layer  %d  cur->handle %x ",
@@ -374,7 +376,7 @@ static void reset_win_rect_info(hwc_win_info_t *win)
 }
 
 
-static int assign_overlay_window(struct hwc_context_t *ctx, hwc_layer_t *cur,
+static int assign_overlay_window(struct hwc_context_t *ctx, hwc_layer_1_t *cur,
         int win_idx, int layer_idx)
 {
     struct hwc_win_info_t   *win;
@@ -425,10 +427,10 @@ static int assign_overlay_window(struct hwc_context_t *ctx, hwc_layer_t *cur,
 
 #ifdef SKIP_DUMMY_UI_LAY_DRAWING
 static void get_hwc_ui_lay_skipdraw_decision(struct hwc_context_t* ctx,
-                               hwc_layer_list_t* list)
+                               hwc_display_contents_1_t* list)
 {
     private_handle_t *prev_handle;
-    hwc_layer_t* cur;
+    hwc_layer_1_t* cur;
     int num_of_fb_lay_skip = 0;
     int fb_lay_tot = ctx->num_of_fb_layer + ctx->num_of_fb_lay_skip;
 
@@ -519,40 +521,43 @@ static void get_hwc_ui_lay_skipdraw_decision(struct hwc_context_t* ctx,
 }
 #endif
 
-static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
+static int hwc_prepare(hwc_composer_device_1_t *dev, size_t numDisplays, hwc_display_contents_1_t** displays)
 {
-    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
-    int overlay_win_cnt = 0;
-    int compositionType = 0;
-    int ret;
+
+    for (uint32_t i = 0; i < numDisplays; i++) {
+        hwc_display_contents_1_t *list = displays[i];  
+        struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+        int overlay_win_cnt = 0;
+        int compositionType = 0;
+        int ret;
 #if defined(BOARD_USES_HDMI)
-    android::SecHdmiClient *mHdmiClient = android::SecHdmiClient::getInstance();
-    int hdmi_cable_status = (int)mHdmiClient->getHdmiCableStatus();
-
-    ctx->hdmi_cable_status = hdmi_cable_status;
+        android::SecHdmiClient *mHdmiClient = android::SecHdmiClient::getInstance();
+        int hdmi_cable_status = (int)mHdmiClient->getHdmiCableStatus();
+        
+        ctx->hdmi_cable_status = hdmi_cable_status;
 #endif
-
+        
 #ifdef SKIP_DUMMY_UI_LAY_DRAWING
-    if ((list && (!(list->flags & HWC_GEOMETRY_CHANGED))) &&
+        if ((list && (!(list->flags & HWC_GEOMETRY_CHANGED))) &&
             (ctx->num_of_hwc_layer > 0)) {
-        get_hwc_ui_lay_skipdraw_decision(ctx, list);
-        return 0;
-    }
-    ctx->fb_lay_skip_initialized = 0;
-    ctx->num_of_fb_lay_skip = 0;
+            get_hwc_ui_lay_skipdraw_decision(ctx, list);
+            return 0;
+        }
+        ctx->fb_lay_skip_initialized = 0;
+        ctx->num_of_fb_lay_skip = 0;
 #ifdef GL_WA_OVLY_ALL
-    ctx->ui_skip_frame_cnt = 0;
+        ctx->ui_skip_frame_cnt = 0;
 #endif
-
-    for (int i = 0; i < NUM_OF_DUMMY_WIN; i++) {
-        ctx->win_virt[i].layer_prev_buf = 0;
-        ctx->win_virt[i].layer_index = -1;
-        ctx->win_virt[i].status = HWC_WIN_FREE;
-    }
+        
+        for (int i = 0; i < NUM_OF_DUMMY_WIN; i++) {
+            ctx->win_virt[i].layer_prev_buf = 0;
+            ctx->win_virt[i].layer_index = -1;
+            ctx->win_virt[i].status = HWC_WIN_FREE;
+        }
 #endif
-
-    //if geometry is not changed, there is no need to do any work here
-    if (!list || (!(list->flags & HWC_GEOMETRY_CHANGED)))
+        
+        //if geometry is not changed, there is no need to do any work here
+        if (!list || (!(list->flags & HWC_GEOMETRY_CHANGED)))
         return 0;
 
     //all the windows are free here....
@@ -567,11 +572,11 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
     ctx->num_of_ext_disp_video_layer = 0;
 
     for (int i = 0; i < list->numHwLayers; i++) {
-        hwc_layer_t *cur = &list->hwLayers[i];
+        hwc_layer_1_t *cur = &list->hwLayers[i];
         private_handle_t *prev_handle = NULL;
         if (cur->handle) {
             prev_handle = (private_handle_t *)(cur->handle);
-            ALOGD("prev_handle->usage = %d", prev_handle->usage);
+            SEC_HWC_Log(HWC_LOG_DEBUG, "prev_handle->usage = %d", prev_handle->usage);
             if (prev_handle->usage & GRALLOC_USAGE_EXTERNAL_DISP) {
                 ctx->num_of_ext_disp_layer++;
                 if ((prev_handle->usage & GRALLOC_USAGE_EXTERNAL_DISP) ||
@@ -583,7 +588,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
     }
 
     for (int i = 0; i < list->numHwLayers ; i++) {
-        hwc_layer_t* cur = &list->hwLayers[i];
+        hwc_layer_1_t* cur = &list->hwLayers[i];
         private_handle_t *prev_handle = (private_handle_t *)(cur->handle);
 
         if (overlay_win_cnt < NUM_OF_WIN) {
@@ -595,7 +600,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
             } else {
                 ret = assign_overlay_window(ctx, cur, overlay_win_cnt, i);
                 if (ret != 0) {
-                    ALOGE("assign_overlay_window fail, change to frambuffer");
+                    SEC_HWC_Log(HWC_LOG_ERROR, "assign_overlay_window fail, change to frambuffer");
                     cur->compositionType = HWC_FRAMEBUFFER;
                     ctx->num_of_fb_layer++;
                     continue;
@@ -611,7 +616,7 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
             ctx->num_of_fb_layer++;
         }
 #if defined(BOARD_USES_HDMI)
-        ALOGD("ext disp vid = %d, cable status = %d, composition type = %d", 
+        SEC_HWC_Log(HWC_LOG_DEBUG, "ext disp vid = %d, cable status = %d, composition type = %d",
                 ctx->num_of_ext_disp_video_layer, ctx->hdmi_cable_status, compositionType);
         if (ctx->num_of_ext_disp_video_layer >= 2) {
             if ((ctx->hdmi_cable_status) &&
@@ -648,18 +653,17 @@ static int hwc_prepare(hwc_composer_device_t *dev, hwc_layer_list_t* list)
             reset_win_rect_info(&ctx->win[i]);
         }
     }
-
+    }
     return 0;
 }
 
-static int hwc_set(hwc_composer_device_t *dev,
-                   hwc_display_t dpy,
-                   hwc_surface_t sur,
-                   hwc_layer_list_t* list)
+static int hwc_set(hwc_composer_device_1_t *dev,
+                   size_t numDisplays,
+                   hwc_display_contents_1_t** displays)
 {
     struct hwc_context_t *ctx = (struct hwc_context_t *)dev;
     int skipped_window_mask = 0;
-    hwc_layer_t* cur;
+    hwc_layer_1_t* cur;
     struct hwc_win_info_t   *win;
     int ret;
     int pmem_phyaddr;
@@ -668,6 +672,8 @@ static int hwc_set(hwc_composer_device_t *dev,
     struct sec_rect src_work_rect;
     struct sec_rect dst_work_rect;
     bool need_swap_buffers = ctx->num_of_fb_layer > 0;
+    for (uint32_t i = 0; i < numDisplays; i++) {
+        hwc_display_contents_1_t* list = displays[i];      
 
     memset(&src_img, 0, sizeof(src_img));
     memset(&dst_img, 0, sizeof(dst_img));
@@ -689,7 +695,7 @@ static int hwc_set(hwc_composer_device_t *dev,
         ctx->num_of_hwc_layer = 0;
         need_swap_buffers = true;
 
-        if (sur == NULL && dpy == NULL) {
+        if (list->sur == NULL && list->dpy == NULL) {
 #ifdef SKIP_DUMMY_UI_LAY_DRAWING
             ctx->fb_lay_skip_initialized = 0;
 #endif
@@ -800,7 +806,7 @@ static int hwc_set(hwc_composer_device_t *dev,
         unsigned char pixels[4];
         glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 #endif
-        EGLBoolean sucess = eglSwapBuffers((EGLDisplay)dpy, (EGLSurface)sur);
+        EGLBoolean sucess = eglSwapBuffers((EGLDisplay)list->dpy, (EGLSurface)list->sur);
         if (!sucess)
             return HWC_EGL_ERROR;
     }
@@ -874,11 +880,88 @@ static int hwc_set(hwc_composer_device_t *dev,
                                     android::SecHdmiClient::HDMI_MODE_VIDEO,
                                     ctx->num_of_hwc_layer);
         } else {
-            ALOGE("%s: Unsupported format = %d", __func__, src_img.format);
+            SEC_HWC_Log(HWC_LOG_ERROR, "%s: Unsupported format = %d", __func__, src_img.format);
         }
     }
 #endif
+    }
     return 0;
+}
+
+static void hwc_registerProcs(struct hwc_composer_device_1* dev,
+        hwc_procs_t const* procs)
+{
+    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+    ctx->procs = const_cast<hwc_procs_t *>(procs);
+}
+
+static int hwc_query(struct hwc_composer_device_1* dev,
+        int what, int* value)
+{
+    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+
+    switch (what) {
+    case HWC_BACKGROUND_LAYER_SUPPORTED:
+        // we don't support the background layer yet
+        value[0] = 0;
+        break;
+    case HWC_VSYNC_PERIOD:
+        // vsync period in nanosecond
+        value[0] = 1000000000.0 / 57;
+        break;
+    default:
+        // unsupported query
+        return -EINVAL;
+    }
+    return 0;
+}
+
+static int hwc_eventControl(struct hwc_composer_device_1* dev, int dpy,
+        int event, int enabled)
+{
+    struct hwc_context_t* ctx = (struct hwc_context_t*)dev;
+
+    switch (event) {
+    case HWC_EVENT_VSYNC:
+        int val = !!enabled;
+        int err = ioctl(ctx->win[0].fd, S3CFB_SET_VSYNC_INT, &val);
+        if (err < 0)
+            return -errno;
+        
+        return 0;
+    }
+    return -EINVAL;
+}
+
+
+static void *hwc_vsync_sysfs_loop(void *data)
+{
+    static char buf[4096];
+    int vsync_timestamp_fd;
+    fd_set exceptfds;
+    int res;
+    int64_t timestamp = 0;
+    hwc_context_t * ctx = (hwc_context_t *)(data);
+
+    vsync_timestamp_fd = open("/sys/devices/platform/samsung-pd.2/s3cfb.0/vsync_time", O_RDONLY);
+    char thread_name[64] = "hwcVsyncThread";
+    prctl(PR_SET_NAME, (unsigned long) &thread_name, 0, 0, 0);
+    setpriority(PRIO_PROCESS, 0, -20);
+    memset(buf, 0, sizeof(buf));
+    
+    SEC_HWC_Log(HWC_LOG_DEBUG,"Using sysfs mechanism for VSYNC notification");
+
+    FD_ZERO(&exceptfds);
+    FD_SET(vsync_timestamp_fd, &exceptfds);
+    do {
+        ssize_t len = read(vsync_timestamp_fd, buf, sizeof(buf));
+        timestamp = strtoull(buf, NULL, 0);
+        ctx->procs->vsync(ctx->procs, 0, timestamp);
+        select(vsync_timestamp_fd + 1, NULL, NULL, &exceptfds, NULL);
+        lseek(vsync_timestamp_fd, 0, SEEK_SET);
+    } while (1);
+
+    return NULL;
 }
 
 static int hwc_device_close(struct hw_device_t *dev)
@@ -901,11 +984,17 @@ static int hwc_device_close(struct hw_device_t *dev)
     }
     return ret;
 }
-
+static int hwc_blank(struct hwc_composer_device_1 *dev, int dpy, int blank)
+{
+    // We're using an older method of screen blanking based on
+    // early_suspend in the kernel.  No need to do anything here.
+    return 0;
+}  
 static int hwc_device_open(const struct hw_module_t* module, const char* name,
         struct hw_device_t** device)
 {
     int status = 0;
+    int err    = 0;
     struct hwc_win_info_t   *win;
 
     if (strcmp(name, HWC_HARDWARE_COMPOSER))
@@ -918,14 +1007,16 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
     memset(dev, 0, sizeof(*dev));
 
     /* initialize the procs */
-    dev->device.common.tag = HARDWARE_DEVICE_TAG;
-    dev->device.common.version = 0;
-    dev->device.common.module = const_cast<hw_module_t*>(module);
-    dev->device.common.close = hwc_device_close;
-
-    dev->device.prepare = hwc_prepare;
-    dev->device.set = hwc_set;
-
+    dev->device.common.tag           = HARDWARE_DEVICE_TAG;
+    dev->device.common.version       = HWC_DEVICE_API_VERSION_1_0;
+    dev->device.common.module        = const_cast<hw_module_t*>(module);
+    dev->device.common.close         = hwc_device_close;
+    dev->device.prepare              = hwc_prepare;
+    dev->device.set                  = hwc_set;
+    dev->device.eventControl         = hwc_eventControl;
+    dev->device.blank         = hwc_blank;
+    dev->device.query                = hwc_query;
+    dev->device.registerProcs        = hwc_registerProcs;
     *device = &dev->device.common;
 
     //initializing
@@ -985,6 +1076,13 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
     if (createFimc(&dev->fimc) < 0) {
         SEC_HWC_Log(HWC_LOG_ERROR, "%s::creatFimc() fail", __func__);
         status = -EINVAL;
+        goto err;
+    }
+
+    err = pthread_create(&dev->vsync_thread, NULL, hwc_vsync_sysfs_loop, dev);
+    if (err) {
+        SEC_HWC_Log(HWC_LOG_ERROR, "%s::pthread_create() failed : %s", __func__, strerror(err));
+        status = -err;
         goto err;
     }
 

@@ -87,7 +87,15 @@ public:
         void setForceMirrorMode(int forceMirrorMode);
 
         uint32_t getHdmiCableStatus();
-
+        void setVideoRotation(int rotation);
+	void setVideoMode(int mode);
+	void setHdmiResolution(int);
+	void setMirrorWithVideoMode(int mode);
+	void disableLayer(unsigned int);
+	int getHdmiResolution();
+	int getVideoMode();
+	int getHdmiAudioChannel();
+	
 private:
         sp<ISecTVOut> m_getSecTVOutService(void);
 
